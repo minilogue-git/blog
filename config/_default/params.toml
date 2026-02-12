@@ -19,8 +19,7 @@ SortBy              = "default"
 
 [sidebar]
     emoji    = "🍥"
-    subtitle = """17년차 직장인, 6년차 아빠,
-8년차 남편"""
+    subtitle = "17년차 직장인, 8년차 남편, 6년차 아빠"
     avatar   = "img/avatar.png"
 
 [article]
