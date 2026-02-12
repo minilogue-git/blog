@@ -2,14 +2,51 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
 :root {
-    /* 기존 폰트 목록 맨 앞에 프리텐다드 추가 */
-    --base-font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    /* 폰트 설정 */
+    --base-font-family: 'Pretendard', sans-serif;
     --article-font-family: var(--base-font-family);
+
+    /* 라이트 모드 색상 상세 정의 */
+    --body-background: #f8f9f8;      /* 아주 연한 녹색 기운이 도는 화이트 */
+    --card-background: #ffffff;      /* 카드 배경은 순백색 */
+    --accent-color: #2d4f3f;         /* 메인 다크 그린 (포인트) */
+    --accent-color-darker: #1e362b;  /* 더 진한 그린 (호버용) */
+    --article-text-color: #2c3e50;   /* 본문 글자색 (짙은 먹색) */
+    --article-title-color: #1a202c;  /* 제목 글자색 */
 }
 
-/* 본문 가독성 향상 (선택 사항) */
+/* 다크 모드일 때의 색상 (선택 사항) */
+html[data-theme="dark"] {
+    --body-background: #1a1c1a;
+    --card-background: #242624;
+    --accent-color: #6a9681;         /* 다크모드에선 조금 밝은 그린 */
+    --article-text-color: #cbd5e0;
+}
+
+/* 본문 가독성 디테일 설정 */
 .article-page .main-article .article-content {
-    line-height: 1.8;      /* 줄 간격 */
-    letter-spacing: -0.01em; /* 자간 살짝 조절 */
-    font-size: 1.1rem;     /* 글자 크기 살짝 키움 */
+    line-height: 1.85;               /* 줄 간격 넓게 */
+    letter-spacing: -0.015em;        /* 한국어 최적 자간 */
+    font-size: 1.1rem;               /* 약간 큼직한 글자 */
+    
+    /* 본문 내 링크 스타일링 */
+    a {
+        color: var(--accent-color);
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        &:hover {
+            color: var(--accent-color-darker);
+            background-color: rgba(45, 79, 63, 0.05);
+        }
+    }
+}
+
+/* 사이드바 메뉴 강조색 변경 */
+.menu li.current {
+    background-color: rgba(45, 79, 63, 0.1);
+    border-right: 4px solid var(--accent-color);
+    a {
+        color: var(--accent-color);
+        font-weight: 700;
+    }
 }
