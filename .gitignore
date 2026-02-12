@@ -3,3 +3,11 @@ resources
 .hugo_build.lock
 .DS_Store
 assets/jsconfig.json
+
+# 옵시디언 자체 설정 (볼트마다 생기는 폴더)
+.obsidian/
+.trash/
+Tags
+# 옵시디언 플러그인
+.makemd/
+.space/
