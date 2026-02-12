@@ -10,8 +10,8 @@ favicon        = "img/favicon.png"
 SortBy              = "default"
 
 [footer]
-    since      = 2026
-    customText = "Copyright © 2026 JU HEON. All rights reserved."
+    since      = 2020
+    customText = ""
 
 [dateFormat]
     published   = ":date_full"
