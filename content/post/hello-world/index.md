@@ -4,11 +4,11 @@ description: Welcome to Hugo Theme Stack
 slug: hello-world
 date: 2022-03-06 00:00:00+0000
 image: cover.jpg
-categories:
-    - Example Category
-tags:
-    - Example Tag
+categories: [Example Category]
+tags: [Example Tag]
 weight: 1       # You can add weight to some posts to override the default sorting (date descending)
+created: 2026-02-12 21:04
+updated: 2026-02-12 21:53
 ---
 
 Welcome to Hugo theme Stack. This is your first post. Edit or delete it, then start writing!
