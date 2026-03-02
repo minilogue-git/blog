@@ -4,16 +4,13 @@ description: 대기업에서 AI 활용이 더딘 이유는 보안이 첫번째, 
 slug: enterprise-ai-barriers-security-learning
 date: 2026-02-24T21:34:35+09:00
 image: ""
-categories:
-  - 업무
-tags:
-  - AI
-  - 보안
-  - 학습
+categories: [Work]
+tags: [AI, 보안, 학습]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-02-27 14:42
+updated: 2026-03-02 19:36
 ---
+
 요즘 출근하기만 하면 C-Suite이건 팀장이건 모두 AI, AI를 입에 달고 산다.<br>
 오죽하면 "**그거, AI로 하면 되지 않아?**"가 그냥 모든 문제의 해결책이냥 지시하고, 지시를 받는다. <br>
 그런데, 문제는 아마 다른 회사들도 마찬가지이겠지만 흔히 대기업군으로 분류되는 임직원 5,000명 이상 혹은 자산이 일정 규모 이상 되는 회사, 인터넷 상에서 '대기업'이라 이야기 하는 근무환경에서 AI를 쓰는 건 생각보다 녹록치 않다. <br>
