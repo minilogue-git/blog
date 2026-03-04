@@ -1,14 +1,14 @@
 ---
+created: 2026-02-24 21:23
+updated: 2026-03-05 05:20
 title: 스스로의 마음을 다스리기 위해 쓰기 시작한 기억노트
 description: 나의 감정 혹은 기분을 기록하면 한결 좋을 것 같다는 막연한 생각에서 시작한다.
-slug: index
+slug: record-feelings-mental-health
 date: 2026-03-02T19:34:59+09:00
-image: ""
+image: 20260302202645.png
 categories: [Life]
-tags: []
+tags: [기억노트, 감정, 기분, 데일리오, Daylio]
 weight: 0
-created: 2026-02-24 21:23
-updated: 2026-03-02 20:32
 ---
 
 # 기억노트란 무엇인가?
