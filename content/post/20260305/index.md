@@ -4,16 +4,11 @@ description: 여러 사람들과 함께 해야 하는 프로젝트의 진척률 
 slug: smart-progress-management-page
 date: 2026-03-05T05:20:51+09:00
 image: 20260305060021.png
-categories:
-  - Project
-tags:
-  - AI
-  - 프로젝트
-  - 마스터플랜
-  - 현황관리
+categories: [Project]
+tags: [AI, 프로젝트, 마스터플랜, 현황관리]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-03-05 06:08
+updated: 2026-03-05 06:24
 ---
 
 # 마스터플랜(Progress Tracker)
@@ -26,5 +21,4 @@ updated: 2026-03-05 06:08
 ![마스터플랜(Progress Tracker) 화면](20260305060021.png)
 
 > [!SUCCESS] **Masterplan 공유**
-> - [🌐 새 창에서 마스터플랜 열기](/files/masterplan.html)
-> - [📥 마스터플랜 파일 다운로드](/files/masterplan.html)
+> - [🌐 새 창에서 마스터플랜 열기(Ctrl + 클릭)](/files/masterplan.html)
