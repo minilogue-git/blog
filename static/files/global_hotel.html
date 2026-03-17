@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global Hotel Dashboard</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ================================================================
+   DESIGN TOKENS — Blue System
+   
+   사용 색상:
+   #203B8A  딥 네이비 블루   주요 액센트 (헤더, 버튼, 강조)
+   #3A80F4  미디엄 블루      밝은 액센트 (차트 주색, hover)
+   #6BA4F8  연한 블루        보조 포인트
+   #4F35D4  인디고           3번째 KPI, 사업장 마커
+   #F6F8FA  페이지 배경
+   #EEF2F6  카드 내 섹션 (테이블 헤더, select 배경)
+   #E8EFFE  선택 하이라이트 배경
+   #C2D0F8  선택 테두리
+   #FFFFFF  카드 배경
+   #0E1D3E  주요 텍스트 (딥 네이비)
+   #374971  보조 텍스트
+   #7A8FAD  약한 텍스트
+   #B8C5D9  비활성
+   #DDE4EF  일반 테두리
+   #C8D3E8  강조 테두리
+================================================================ */
+:root {
+  --bg:        #F6F8FA;
+  --surface:   #FFFFFF;
+  --surface2:  #EEF2F6;
+  --border:    #DDE4EF;
+  --border2:   #C8D3E8;
+
+  --b1:   #203B8A;   /* deep navy */
+  --b2:   #2D58C8;   /* mid blue */
+  --b3:   #3A80F4;   /* bright blue */
+  --b4:   #6BA4F8;   /* light blue */
+  --b5:   #EEF4FF;   /* pale blue */
+  --ind:  #4F35D4;   /* indigo */
+
+  --t1:   #0E1D3E;
+  --t2:   #374971;
+  --t3:   #7A8FAD;
+  --t4:   #B8C5D9;
+
+  --sel:  #E8EFFE;
+  --selb: #C2D0F8;
+
+  --sh1: 0 1px 3px rgba(32,59,138,.07), 0 2px 6px rgba(32,59,138,.04);
+  --sh2: 0 2px 8px rgba(32,59,138,.09), 0 8px 24px rgba(32,59,138,.06);
+  --sh3: 0 4px 16px rgba(58,128,244,.14), 0 12px 32px rgba(58,128,244,.08);
+
+  --r:    13px;
+  --rsm:  8px;
+  --fn:   'Pretendard Variable','Pretendard',sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body { font-family: var(--fn); background: var(--bg); color: var(--t1); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--b3); }
+
+/* ═══ LOADING OVERLAY ═══ */
+#lov {
+  position: fixed; inset: 0; background: rgba(255,255,255,.97);
+  z-index: 9999; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+  transition: opacity .35s;
+}
+#lov.gone { opacity: 0; pointer-events: none; }
+.spin {
+  width: 38px; height: 38px;
+  border: 3px solid var(--border); border-top-color: var(--b1);
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.ltxt { font-size: .93rem; color: var(--t3); font-weight: 600; }
+
+/* ═══ HEADER ═══ */
+header {
+  background: var(--surface); border-bottom: 1.5px solid var(--border);
+  height: 56px; padding: 0 28px; display: flex; align-items: center;
+  justify-content: space-between; position: sticky; top: 0; z-index: 1000;
+  box-shadow: var(--sh1);
+}
+.h-left { display: flex; align-items: center; gap: 11px; }
+.h-logo {
+  width: 32px; height: 32px; background: var(--b1); border-radius: 9px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.h-logo svg { width: 17px; height: 17px; }
+.h-title { font-size: 1.05rem; font-weight: 800; color: var(--t1); letter-spacing: -.025em; }
+.h-title em { font-style: normal; color: var(--b1); }
+.h-right { display: flex; align-items: center; gap: 12px; }
+.h-cnt { font-size: .87rem; font-weight: 600; color: var(--t3); }
+
+/* ═══ FILTER BAR ═══ */
+.fbar {
+  background: var(--surface); border-bottom: 1.5px solid var(--border);
+  padding: 8px 28px; display: flex; align-items: center; gap: 9px;
+  position: sticky; top: 56px; z-index: 900; min-height: 44px;
+  overflow-x: auto;
+}
+.flbl { font-size: .75rem; font-weight: 800; color: var(--t3); text-transform: uppercase; letter-spacing: .08em; flex-shrink: 0; }
+select {
+  font-family: var(--fn); font-size: .85rem; font-weight: 600; color: var(--t2);
+  background: var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%237A8FAD' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 7px center;
+  border: 1.5px solid var(--border); border-radius: var(--rsm);
+  padding: 5px 26px 5px 10px; appearance: none; cursor: pointer;
+  transition: border-color .14s, box-shadow .14s; flex-shrink: 0;
+}
+select:hover { border-color: var(--b2); }
+select:focus { outline: none; border-color: var(--b3); box-shadow: 0 0 0 3px rgba(58,128,244,.12); }
+.breset {
+  font-family: var(--fn); font-size: .82rem; font-weight: 700;
+  color: var(--b1); background: transparent; border: 1.5px solid var(--b1);
+  border-radius: var(--rsm); padding: 5px 13px; cursor: pointer; transition: all .14s; flex-shrink: 0;
+}
+.breset:hover { background: var(--b1); color: #fff; }
+.vsep { width: 1px; height: 18px; background: var(--border); flex-shrink: 0; }
+.ftags { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.ftag {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: var(--sel); border: 1.5px solid var(--selb);
+  color: var(--b1); border-radius: 20px; padding: 2px 8px 2px 9px;
+  font-size: .79rem; font-weight: 700; cursor: pointer; transition: background .12s;
+}
+.ftag:hover { background: #d6e4ff; }
+.ftag-x { color: var(--t3); font-size: .79rem; }
+.finfo { font-size: .79rem; font-weight: 600; color: var(--t3); white-space: nowrap; }
+/* 업데이트 일자 — 오른쪽 끝 */
+.fbar-right { margin-left: auto; flex-shrink: 0; display: flex; align-items: center; }
+.upd-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--sel); border: 1.5px solid var(--selb);
+  border-radius: 20px; padding: 4px 13px 4px 9px;
+  font-size: .82rem; font-weight: 600; color: var(--t2); white-space: nowrap;
+}
+.upd-dot {
+  width: 7px; height: 7px; background: var(--b3); border-radius: 50%;
+  animation: pulse 2.2s ease infinite; flex-shrink: 0;
+}
+@keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.5; transform:scale(.8); } }
+.upd-pill strong { font-weight: 800; color: var(--b1); }
+
+/* ═══ MAIN ═══ */
+main { padding: 18px 28px 48px; }
+
+/* ═══ KPI STRIP — compact 2줄 ═══ */
+.kpi-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 16px; }
+.kpi {
+  background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--r);
+  padding: 13px 16px 11px; box-shadow: var(--sh1); position: relative; overflow: hidden;
+  transition: box-shadow .17s, transform .17s;
+}
+.kpi:hover { box-shadow: var(--sh3); transform: translateY(-1px); }
+.kpi::after {
+  content: ''; position: absolute; bottom: 0; left: 0;
+  height: 3px; width: 100%; background: var(--kl, var(--b1)); border-radius: 0 0 2px 2px;
+}
+/* 1줄: 아이콘 + 라벨 + 값 */
+.kpi-top { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.kpi-ico {
+  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+  background: var(--ki, rgba(32,59,138,.09)); display: flex; align-items: center; justify-content: center;
+}
+.kpi-ico svg { width: 17px; height: 17px; }
+.kpi-body { display: flex; flex-direction: column; min-width: 0; }
+.kpi-lbl { font-size: .76rem; font-weight: 700; color: var(--t3); letter-spacing: .01em; line-height: 1.2; }
+.kpi-val { font-size: 1.8rem; font-weight: 900; color: var(--t1); letter-spacing: -.04em; line-height: 1.05; }
+/* 2줄: 서브텍스트 */
+.kpi-sub { font-size: .78rem; color: var(--t3); padding-left: 44px; }
+.kpi-badge {
+  display: inline-block; padding: 0 8px; background: var(--sel);
+  border: 1.5px solid var(--selb); color: var(--b1); border-radius: 20px;
+  font-size: .78rem; font-weight: 800;
+}
+
+/* ═══ GRID LAYOUTS ═══ */
+.g  { display: grid; gap: 14px; margin-bottom: 14px; }
+.g3 { grid-template-columns: repeat(3,1fr); }
+.g2 { grid-template-columns: repeat(2,1fr); }
+.gmap { grid-template-columns: 3fr 1.7fr; }
+
+/* ═══ CARD ═══ */
+.card {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--r); padding: 18px 20px; box-shadow: var(--sh1);
+  transition: box-shadow .17s; overflow: hidden;
+}
+.card:hover { box-shadow: var(--sh2); }
+.ch { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; gap: 8px; }
+.ct { font-size: .95rem; font-weight: 800; color: var(--t1); letter-spacing: -.015em; }
+.cs { font-size: .78rem; color: var(--t3); margin-top: 2px; font-weight: 500; }
+.cbdg {
+  background: var(--sel); border: 1.5px solid var(--selb); color: var(--b1);
+  border-radius: 20px; padding: 3px 10px; font-size: .75rem; font-weight: 800;
+  white-space: nowrap; flex-shrink: 0;
+}
+
+/* ═══ CANVAS CHARTS ═══ */
+.cw { position: relative; }
+.cw canvas { width: 100% !important; }
+
+/* ═══ TREEMAP ═══ */
+#tm { display: flex; flex-wrap: wrap; gap: 5px; min-height: 190px; align-content: flex-start; align-items: flex-start; }
+.tmc {
+  border-radius: 8px; display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 8px 10px; cursor: pointer; user-select: none;
+  transition: filter .15s, transform .12s, outline .12s; overflow: hidden;
+}
+.tmc:hover { filter: brightness(1.08); transform: scale(1.015); }
+.tmc.sel { outline: 2.5px solid rgba(0,0,0,.5); outline-offset: -2px; }
+.tmc.dim { filter: brightness(.55) saturate(.4); }
+.tmc-n { font-size: 1.36rem; font-weight: 900; color: rgba(255,255,255,.93); letter-spacing: -.03em; line-height: 1; text-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.tmc-l { font-size: 0.89rem; font-weight: 800; color: rgba(255,255,255,.9); text-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.tmc-p { font-size: .70rem; font-weight: 700; color: rgba(255,255,255,.6); margin-top: 1px; }
+
+/* ═══ CC TABLE ═══ */
+.cc-wrap { overflow-y: auto; max-height: 258px; }
+.cct { width: 100%; border-collapse: collapse; font-size: 1.05rem; }
+.cct thead th {
+  position: sticky; top: 0; background: var(--surface2);
+  font-weight: 800; font-size: .75rem; color: var(--t3);
+  text-transform: uppercase; letter-spacing: .06em;
+  padding: 8px 12px; text-align: left; border-bottom: 1.5px solid var(--border); white-space: nowrap;
+}
+.cct thead th.r { text-align: right; }
+.cct tbody tr { border-bottom: 1px solid var(--border); transition: background .11s; }
+.cct tbody tr:last-child { border-bottom: none; }
+.cct tbody tr:hover { background: var(--b5); }
+.cct td { padding: 9px 12px; color: var(--t2); }
+.cct td.r { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--t1); }
+.ccflag { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; margin-right: 6px; }
+.rbar { display: flex; align-items: center; gap: 7px; }
+.rbar-bg { flex: 1; height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; min-width: 50px; }
+.rbar-fill { height: 100%; background: linear-gradient(90deg, var(--b1), var(--b3)); border-radius: 4px; transition: width .4s cubic-bezier(.4,0,.2,1); }
+.rpct { font-size: .95rem; font-weight: 800; color: var(--b1); width: 36px; text-align: right; flex-shrink: 0; }
+
+/* ═══ STATE BARS ═══ */
+.sb-wrap { max-height: 364px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+.sbrow {
+  display: flex; align-items: center; gap: 4px; cursor: pointer;
+  padding: 3px 5px; border-radius: 7px; transition: background .12s; user-select: none;
+}
+.sbrow:hover { background: var(--b5); }
+.sbrow.sel { background: var(--sel); }
+.sbrow.dim { opacity: .3; }
+.sblbl { font-size: .82rem; font-weight: 700; color: var(--t2); width: 30%; flex-shrink: 0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sbt { flex: 0 0 55%; width: 55%; height: 15px; background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; overflow: hidden; }
+.sbf { height: 100%; background: linear-gradient(90deg, var(--b1), var(--b3)); border-radius: 5px; transition: width .4s cubic-bezier(.4,0,.2,1); }
+.sbf.sel { background: linear-gradient(90deg, var(--ind), #8B7AFF); }
+.sbval { font-size: .82rem; font-weight: 800; color: var(--t3); width: 12%; text-align: right; flex-shrink: 0; }
+
+/* ═══ MAP ═══ */
+#map-box { height: 408px; border-radius: 9px; overflow: hidden; }
+.mctrl { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 9px; align-items: center; }
+.mbtn {
+  font-family: var(--fn); font-size: .79rem; font-weight: 700;
+  padding: 4px 12px; border-radius: 20px; border: 1.5px solid var(--border2);
+  background: var(--surface2); color: var(--t2); cursor: pointer;
+  transition: all .13s; white-space: nowrap;
+}
+.mbtn:hover { border-color: var(--b2); color: var(--b1); }
+.mbtn.act { background: var(--b1); color: #fff; border-color: var(--b1); }
+.mbtn.ract { background: var(--ind); border-color: var(--ind); color: #fff; }
+.mleg { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.mli { display: flex; align-items: center; gap: 5px; font-size: .79rem; color: var(--t3); font-weight: 600; }
+.mld { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.mls { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* ═══ HOTEL TABLE ═══ */
+.ht-wrap { overflow-y: auto; max-height: 280px; }
+table.ht { width: 100%; border-collapse: collapse; font-size: 1rem; }
+table.ht thead th {
+  position: sticky; top: 0; background: var(--surface2);
+  font-weight: 800; font-size: .75rem; color: var(--t3);
+  text-transform: uppercase; letter-spacing: .06em;
+  padding: 8px 10px; text-align: left; border-bottom: 1.5px solid var(--border); white-space: nowrap;
+}
+table.ht tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+table.ht tbody tr:last-child { border-bottom: none; }
+table.ht tbody tr:hover { background: var(--b5); }
+table.ht td { padding: 8px 10px; color: var(--t2); vertical-align: middle; }
+.ctag {
+  display: inline-block; padding: 2px 9px; border-radius: 5px;
+  font-size: .75rem; font-weight: 800; background: rgba(58,128,244,.1); color: var(--b1);
+}
+.co { color: var(--b2); font-weight: 800; }
+.cx { color: var(--t4); }
+.star { color: #F59E0B; font-size: .72rem; letter-spacing: 1px; }
+.lbtn {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: .73rem; font-weight: 700; background: var(--sel);
+  color: var(--b1); text-decoration: none; border: 1px solid var(--selb); transition: background .12s;
+}
+.lbtn:hover { background: #d6e4ff; }
+.lbtn.vi { background: rgba(79,53,212,.08); color: var(--ind); border-color: rgba(79,53,212,.2); }
+.lbtn.vi:hover { background: rgba(79,53,212,.14); }
+
+/* ═══ SECTION DIVIDER ═══ */
+.sdiv {
+  font-size: .75rem; font-weight: 800; color: var(--t3); text-transform: uppercase;
+  letter-spacing: .09em; margin: 18px 0 10px; display: flex; align-items: center; gap: 8px;
+}
+.sdiv::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ═══ EMPTY ═══ */
+.empty { text-align: center; padding: 28px; color: var(--t3); font-size: .87rem; }
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width:1280px) { .g3 { grid-template-columns: repeat(2,1fr); } }
+@media (max-width:1000px) { .gmap { grid-template-columns: 1fr; } }
+@media (max-width:760px) {
+  main { padding: 12px 14px 40px; }
+  .kpi-row { grid-template-columns: repeat(2,1fr); }
+  .g3,.g2 { grid-template-columns: 1fr; }
+  header,.fbar { padding-left: 14px; padding-right: 14px; }
+  #map-box { height: 300px; }
+}
+</style>
+</head>
+<body>
+
+<div id="lov">
+  <div class="spin"></div>
+  <div class="ltxt">27,000여개 데이터를 불러오는 중...</div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="h-left">
+    <div class="h-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4"/>
+      </svg>
+    </div>
+    <span class="h-title">Global <em>Hotel</em> Dashboard</span>
+  </div>
+  <div class="h-right">
+    <span id="hd-cnt" class="h-cnt"></span>
+  </div>
+</header>
+
+<!-- FILTER BAR -->
+<div class="fbar">
+  <span class="flbl">필터</span>
+  <select id="f-country"><option value="">모든 국가</option></select>
+  <select id="f-chain"><option value="">모든 체인</option></select>
+  <select id="f-grade"><option value="">모든 등급</option></select>
+  <select id="f-contract">
+    <option value="">계약 여부 전체</option>
+    <option value="O">계약 호텔만</option>
+    <option value="X">비계약 호텔만</option>
+  </select>
+  <select id="f-state"><option value="">모든 주(State)</option></select>
+  <div class="vsep"></div>
+  <button class="breset" id="btn-reset">전체 초기화</button>
+  <div class="vsep"></div>
+  <div class="ftags" id="ftags"></div>
+  <span class="finfo" id="finfo"></span>
+  <!-- 업데이트 일자 — 오른쪽 끝 -->
+  <div class="fbar-right">
+    <div class="upd-pill">
+      <div class="upd-dot"></div>
+      업데이트 일자&nbsp;<strong id="upd-date">—</strong>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main>
+
+  <!-- ── KPI ── -->
+  <div class="kpi-row">
+    <div class="kpi" style="--kl:#203B8A;--ki:rgba(32,59,138,.09)">
+      <div class="kpi-top">
+        <div class="kpi-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#203B8A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4"/></svg>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-lbl">전체 호텔</div>
+          <div class="kpi-val" id="kv-total">—</div>
+        </div>
+      </div>
+      <div class="kpi-sub">필터 적용: <strong id="kv-filt">—</strong>개 표시</div>
+    </div>
+
+    <div class="kpi" style="--kl:#3A80F4;--ki:rgba(58,128,244,.1)">
+      <div class="kpi-top">
+        <div class="kpi-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#3A80F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-lbl">계약 호텔</div>
+          <div class="kpi-val" id="kv-con">—</div>
+        </div>
+      </div>
+      <div class="kpi-sub">계약 비율 <span class="kpi-badge" id="kv-ratio">—</span></div>
+    </div>
+
+    <div class="kpi" style="--kl:#4F35D4;--ki:rgba(79,53,212,.09)">
+      <div class="kpi-top">
+        <div class="kpi-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#4F35D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-lbl">커버리지 국가</div>
+          <div class="kpi-val" id="kv-ctry">—</div>
+        </div>
+      </div>
+      <div class="kpi-sub">개 국가 / 지역</div>
+    </div>
+
+    <div class="kpi" style="--kl:#6BA4F8;--ki:rgba(107,164,248,.1)">
+      <div class="kpi-top">
+        <div class="kpi-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#6BA4F8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-lbl">호텔 체인</div>
+          <div class="kpi-val" id="kv-chain">—</div>
+        </div>
+      </div>
+      <div class="kpi-sub">개 주요 체인 그룹</div>
+    </div>
+  </div>
+
+  <!-- ── Row 1: Country(L) | Grade(R) ── -->
+  <div class="g g2">
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct">국가별 호텔 수</div><div class="cs">상위 20개국 · 클릭하여 필터</div></div>
+        <span class="cbdg" id="bdg-country">전체</span>
+      </div>
+      <div class="cw"><canvas id="ch-country" height="210"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct">등급별 호텔 분포</div><div class="cs">성급 기준 · 클릭하여 필터</div></div>
+        <span class="cbdg" id="bdg-grade">전체</span>
+      </div>
+      <div class="cw"><canvas id="ch-grade" height="210"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── Row 2: Treemap(L) | Country table(R) ── -->
+  <div class="g g2">
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct">호텔 체인별 분포</div><div class="cs">Treemap · 클릭하여 필터</div></div>
+        <span class="cbdg" id="bdg-chain">전체</span>
+      </div>
+      <div id="tm"></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct">국가별 호텔 현황</div><div class="cs">전체 · 계약 호텔 수 · 계약 비율</div></div>
+      </div>
+      <div class="cc-wrap">
+        <table class="cct">
+          <thead><tr>
+            <th>국가</th><th class="r">전체 호텔</th><th class="r">계약 호텔</th>
+            <th style="min-width:130px">계약 비율</th>
+          </tr></thead>
+          <tbody id="cc-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Row 3: Map | State bars ── -->
+  <div class="g gmap">
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct">호텔 위치 지도</div><div class="cs">OpenStreetMap (한국어) · 마커 클릭 시 상세 정보</div></div>
+      </div>
+      <div class="mctrl">
+        <span style="font-size:.75rem;font-weight:800;color:var(--t3);margin-right:2px">반경 필터</span>
+        <button class="mbtn act" id="rb0"  onclick="setR(0)">해제</button>
+        <button class="mbtn"     id="rb5"  onclick="setR(5)">5km</button>
+        <button class="mbtn"     id="rb10" onclick="setR(10)">10km</button>
+        <button class="mbtn"     id="rb15" onclick="setR(15)">15km</button>
+        <button class="mbtn"     id="rb20" onclick="setR(20)">20km</button>
+      </div>
+      <div id="map-box"></div>
+      <div class="mleg" id="map-legend"></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct">미국 주(State)별 호텔 수</div><div class="cs">클릭하여 전체 필터 연동</div></div>
+      </div>
+      <div class="sb-wrap" id="sb"></div>
+    </div>
+  </div>
+
+  <!-- ── Row 4: Contract hotel list ── -->
+  <div class="sdiv">계약 호텔 목록</div>
+  <div class="card">
+    <div class="ch">
+      <div><div class="ct">계약 호텔 목록</div><div class="cs" id="tsub">필터 결과 표시 중</div></div>
+      <span class="cbdg">최대 500개 표시</span>
+    </div>
+    <div class="ht-wrap">
+      <table class="ht">
+        <thead><tr>
+          <th>체인</th><th>국가</th><th>호텔명</th><th>등급</th>
+          <th>주소</th><th>링크</th>
+        </tr></thead>
+        <tbody id="ht-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* ================================================================
+   CONFIG
+   ─────────────────────────────────────────────────────────────
+   DB를 3개 파일로 분할하여 병렬 로드합니다 (각 파일 ~4~5MB).
+   분할 기준:
+     FILE_URLS[0] : Marriott + Other  (~4.5MB)
+     FILE_URLS[1] : Hilton            (~4.1MB)
+     FILE_URLS[2] : IHG + Accor + Hyatt (~4.8MB)
+
+   ── 방식 A: Power Automate Flow 3개 (Power Pages 배포용) ────────
+   각 파일마다 별도 Flow를 만들고 URL을 FILE_URLS 배열에 입력.
+   Flow 구성 (파일마다 동일한 구조):
+     트리거  : When an HTTP request is received
+     액션 1  : Get file content (SharePoint) → hotel_X.json
+     액션 2  : Response
+               Status : 200
+               Headers: Content-Type              = application/json
+                        Access-Control-Allow-Origin = *
+               Body   : @{body('Get_file_content')}
+
+   ── 방식 B: 로컬 JSON 직접 (로컬 테스트용) ──────────────────────
+   FILE_URLS에 로컬 경로 3개 입력 + USE_DEMO: false
+   예) FILE_URLS: ['./hotel_1.json','./hotel_2.json','./hotel_3.json']
+   ※ VS Code Live Server 또는 python -m http.server 로 실행 필요
+
+   ── 모드 전환 ────────────────────────────────────────────────────
+   USE_DEMO : true  → 샘플 1,200건 데모
+              false → FILE_URLS 사용 (3개 파일 병렬 로드)
+================================================================ */
+const CFG = {
+  FILE_URLS: [
+    '',   // Flow URL 또는 './hotel1.json'
+  ],
+  USE_DEMO: true,   // false 로 변경해야 FILE_URLS 사용
+  OFFICES: [
+	{ name: '사무실', lat:37.5866, lng:126.9750 },
+  ]
+};
+
+/* ================================================================
+   COLORS
+================================================================ */
+const CHAIN_COL = {
+  IHG:'#204456', Accor:'#FF3A47', Hilton:'#FF9A64',
+  Marriott:'#4F35D4', Hyatt:'#0273CE', Other:'#94A3B8'
+};
+const GRADE_COL = ['#B8C5D9','#6BA4F8','#3A80F4','#2D58C8','#203B8A'];
+const PALETTE = [
+  '#203B8A','#3A80F4','#4F35D4','#6BA4F8','#F59E0B',
+  '#2D58C8','#7C3AED','#0EA5E9','#059669','#F97316',
+  '#0284C7','#6366F1','#EF4444','#A78BFA','#34D399'
+];
+
+/* ================================================================
+   STATE
+================================================================ */
+let ALL=[], FD=[];
+let myMap, mLayer, oLayer, rCircles=[];
+let activeR=0, activeOffice=null, CHARTS={};
+let SEL = { country:null, grade:null, chain:null, state:null };
+
+/* ================================================================
+   DEMO DATA
+================================================================ */
+function genDemo(n=1200){
+  const chains=['IHG','Accor','Hilton','Marriott','Hyatt','Other'];
+  const countries=['USA','Korea','Japan','France','Germany','China','UK','Australia','Singapore','UAE','Canada','Thailand'];
+  const usStates=['CA','TX','NY','FL','IL','WA','CO','NV','AZ','GA','VA','MA','NC','OH','PA','TN','MO','MN','MI','WI'];
+  const grades=['1성급','2성급','3성급','4성급','5성급'];
+  const cen={
+    USA:[37.09,-95.71],Korea:[36.5,127.8],Japan:[36.2,138.3],France:[46.2,2.2],
+    Germany:[51.2,10.5],China:[35.9,104.2],UK:[55.4,-3.4],Australia:[-25.3,133.8],
+    Singapore:[1.35,103.82],UAE:[23.4,53.8],Canada:[56.1,-106.3],Thailand:[15.8,100.9]
+  };
+  const gW=[.1,.15,.35,.28,.12];
+  const cW={'1성급':.1,'2성급':.15,'3성급':.22,'4성급':.3,'5성급':.4};
+  const arr=[];
+  for(let i=0;i<n;i++){
+    const ch=chains[~~(Math.random()*chains.length)];
+    const co=countries[~~(Math.random()*countries.length)];
+    const st=co==='USA'?usStates[~~(Math.random()*usStates.length)]:'';
+    let gi=0, gv=Math.random(), s=0;
+    for(let j=0;j<gW.length;j++){s+=gW[j];if(gv<s){gi=j;break}}
+    const gr=grades[gi];
+    const con=Math.random()<(cW[gr]||.2)?'O':'X';
+    const c=cen[co]||[0,0], sp=co==='USA'?10:5;
+    const lat=c[0]+(Math.random()-.5)*sp;
+    const lng=c[1]+(Math.random()-.5)*(sp*1.4);
+    const today=new Date();
+    const lm=new Date(today-~~(Math.random()*90)*864e5);
+    const lmStr=`${lm.getFullYear()}-${String(lm.getMonth()+1).padStart(2,'0')}-${String(lm.getDate()).padStart(2,'0')}`;
+    arr.push({
+      'HotelID':`${ch}_${co}_${ch}${co}${i+1}`,
+      'HC':ch,'Co':co,'Name':`${ch} ${co} ${i+1}`,
+      'Add':`${100+i} Sample St, ${co}`,'State':st,
+      'Contract':con,'Grade':gr,'Zip':`${10000+~~(Math.random()*89999)}`,
+      'Lat':+lat.toFixed(6),'Lon':+lng.toFixed(6),
+      'Map':`https://maps.google.com/?q=${lat.toFixed(4)},${lng.toFixed(4)}`,
+      'URL':'#','LastModified':lmStr
+    });
+  }
+  return arr;
+}
+
+/* ================================================================
+   LOAD DATA  —  3개 파일 병렬 fetch 후 합산
+   ─────────────────────────────────────────────────────────────
+   Promise.all 로 3개를 동시에 가져오므로 순차 로드 대비 3배 빠름.
+   한 파일이 실패해도 나머지는 표시 (부분 로드 허용).
+
+   각 JSON 파일 구조:
+     { "generatedAt":"YYYY-MM-DD", "hotels":[...] }
+     또는 배열 직접: [ {...}, {...} ]
+================================================================ */
+async function loadData(){
+  if(CFG.USE_DEMO){
+    ALL = genDemo(1200);
+    setUpdDate('데모 데이터');
+    return;
+  }
+
+  const urls = (CFG.FILE_URLS || []).filter(u => u && u.trim());
+  if(!urls.length){
+    ALL = genDemo(1200);
+    setUpdDate('URL 미설정 (데모)');
+    return;
+  }
+
+  showLoadingMsg(`27,000여개 데이터 로드 중… (${urls.length}개 파일 병렬 로드)`);
+
+  // 단일 파일 fetch — Flow(POST) vs 직접(GET) 자동 판별
+  async function fetchOne(url){
+    const isFlow = url.includes('logic.azure.com') || url.includes('flow.microsoft.com');
+    const opts = isFlow
+      ? { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}', cache:'no-cache' }
+      : { method:'GET', cache:'no-cache' };
+    const r = await fetch(url, opts);
+    if(!r.ok) throw new Error(`HTTP ${r.status} (${url.split('/').pop()})`);
+    return r.json();
+  }
+
+  // 병렬 fetch — 실패한 파일은 건너뜀
+  const results = await Promise.allSettled(urls.map(fetchOne));
+
+  const allRows = [];
+  const allDates = [];
+  const errors = [];
+
+  results.forEach((res, i) => {
+    if(res.status === 'fulfilled'){
+      const j = res.value;
+      // 데이터 추출
+      const rows = Array.isArray(j)
+        ? j
+        : (j.hotels || j.rows || j.value || j.data || []);
+      allRows.push(...rows);
+      // generatedAt 우선 수집 (JSON 루트 메타)
+      const d = !Array.isArray(j)
+        ? (j.generatedAt || j.lastModified || j.updatedAt || '')
+        : '';
+      if(d) allDates.push(d);
+      // generatedAt 없는 경우에만 행의 LastModified 수집
+      if(!d){
+        rows.forEach(h => {
+          const ld = h['LastModified'] || h['lastModified'] || '';
+          if(ld) allDates.push(ld);
+        });
+      }
+    } else {
+      errors.push(`파일 ${i+1}: ${res.reason && res.reason.message || res.reason}`);
+    }
+  });
+
+  ALL = allRows;
+
+  if(!ALL.length){
+    ALL = genDemo(1200);
+    setUpdDate('오류 (데모)');
+    showErrBanner(errors.join(' / ') || '모든 파일 로드 실패');
+    return;
+  }
+
+  // 업데이트 날짜 — 수집된 날짜 중 최댓값
+  allDates.sort();
+  const latestDate = allDates.length ? fmtDate(allDates[allDates.length - 1]) : null;
+  setUpdDate(latestDate || '—');
+
+  // 일부 파일 실패 시 경고 배너 (데이터는 표시)
+  if(errors.length){
+    showErrBanner(`일부 파일 로드 실패 (${ALL.length.toLocaleString()}건만 표시): ${errors.join(' / ')}`);
+  }
+}
+
+function showLoadingMsg(txt){
+  const ov = document.getElementById('lov');
+  const lt = ov && ov.querySelector('.ltxt');
+  if(lt) lt.textContent = txt;
+}
+
+function showErrBanner(msg){
+  // 이미 배너 있으면 제거
+  document.getElementById('err-banner') && document.getElementById('err-banner').remove();
+  const d = document.createElement('div');
+  d.id = 'err-banner';
+  d.style.cssText = 'position:fixed;top:56px;left:0;right:0;z-index:9998;' +
+    'background:#FEF2F2;border-bottom:2px solid #FCA5A5;color:#7F1D1D;' +
+    'font:600 13px/1.5 sans-serif;padding:10px 24px;display:flex;gap:12px;align-items:center';
+  d.innerHTML =
+    '<span style="font-size:16px">⚠️</span>' +
+    '<span><b>데이터 로드 실패</b> — ' + msg + '</span>' +
+    '<span style="margin-left:auto;opacity:.6;font-size:12px">현재 데모 데이터 표시 중</span>' +
+    '<button onclick="this.parentElement.remove()" ' +
+      'style="background:none;border:none;cursor:pointer;font-size:18px;color:#7F1D1D;padding:0 4px">✕</button>';
+  document.body.appendChild(d);
+}
+
+/* YYYY-MM-DD 또는 ISO 날짜 문자열 → YYYY.MM.DD 표시용 */
+function fmtDate(str){
+  if(!str) return null;
+  try{
+    // YYYY-MM-DD 형식이면 직접 파싱 (타임존 오류 방지)
+    const m = String(str).match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+    if(m) return `${m[1]}.${m[2].padStart(2,'0')}.${m[3].padStart(2,'0')}`;
+    // ISO 형식 등 기타
+    const d = new Date(str);
+    if(isNaN(d)) return null;
+    return d.toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'})
+            .replace(/\s/g,'');
+  } catch{ return null; }
+}
+
+function setUpdDate(str){
+  const el = document.getElementById('upd-date');
+  if(el) el.textContent = str;
+}
+
+/* ================================================================
+   FILTER LOGIC
+================================================================ */
+function getDrop(){
+  return {
+    country:  document.getElementById('f-country').value,
+    chain:    document.getElementById('f-chain').value,
+    grade:    document.getElementById('f-grade').value,
+    contract: document.getElementById('f-contract').value,
+    state:    document.getElementById('f-state').value
+  };
+}
+
+function applyFilters(){
+  const f = getDrop();
+  // State 선택 시 자동으로 Country=USA 고정
+  if(f.state && !f.country){
+    document.getElementById('f-country').value = 'USA';
+    f.country = 'USA';
+  }
+  FD = ALL.filter(h=>{
+    if(f.country  && h['Co']           !== f.country)  return false;
+    if(f.chain    && h['HC']        !== f.chain)    return false;
+    if(f.grade    && h['Grade']              !== f.grade)    return false;
+    if(f.contract && h['Contract']        !== f.contract) return false;
+    if(f.state    && h['State']  !== f.state)    return false;
+    return true;
+  });
+  if(activeR > 0){
+    const targets = activeOffice ? [activeOffice] : CFG.OFFICES;
+    FD = FD.filter(h=>{
+      const lat=+h['Lat'], lng=+h['Lon'];
+      if(isNaN(lat)||isNaN(lng)) return false;
+      return targets.some(o => hav(o.lat,o.lng,lat,lng) <= activeR);
+    });
+  }
+  updateAll();
+}
+
+function resetAll(){
+  ['f-country','f-chain','f-grade','f-contract','f-state']
+    .forEach(id => document.getElementById(id).value = '');
+  SEL = {country:null,grade:null,chain:null,state:null};
+  activeR = 0;
+  activeOffice = null;
+  document.querySelectorAll('.mbtn').forEach(b=>b.classList.remove('act','ract'));
+  document.getElementById('rb0').classList.add('act');
+  rCircles.forEach(c=>myMap.removeLayer(c)); rCircles=[];
+  applyFilters();
+}
+
+function hav(lat1,lng1,lat2,lng2){
+  const R=6371, dL=(lat2-lat1)*Math.PI/180, dl=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dl/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function setR(km){
+  activeR = km;
+  document.querySelectorAll('.mbtn').forEach(b=>b.classList.remove('act','ract'));
+  const btn = document.getElementById(`rb${km}`);
+  if(btn) btn.classList.add(km>0?'ract':'act');
+  rCircles.forEach(c=>myMap.removeLayer(c)); rCircles=[];
+  if(km>0){
+    // 선택된 사업장만, 없으면 전체 사업장
+    const targets = activeOffice ? [activeOffice] : CFG.OFFICES;
+    targets.forEach(o=>{
+      const c = L.circle([o.lat,o.lng],{radius:km*1000,color:'#00B7B7',fillOpacity:.06,weight:2,dashArray:'6,4'});
+      c.addTo(myMap); rCircles.push(c);
+    });
+  }
+  applyFilters();
+}
+
+/* cross-filter: FD filtered by SEL, excluding one dimension */
+function cf(excl){
+  return FD.filter(h=>{
+    if(excl!=='country'&&SEL.country&&h['Co']          !==SEL.country) return false;
+    if(excl!=='grade'  &&SEL.grade  &&h['Grade']            !==SEL.grade)   return false;
+    if(excl!=='chain'  &&SEL.chain  &&h['HC']      !==SEL.chain)   return false;
+    if(excl!=='state'  &&SEL.state  &&h['State']!==SEL.state)   return false;
+    return true;
+  });
+}
+
+function applySel(data){
+  return data.filter(h=>{
+    if(SEL.country&&h['Co']          !==SEL.country) return false;
+    if(SEL.grade  &&h['Grade']            !==SEL.grade)   return false;
+    if(SEL.chain  &&h['HC']      !==SEL.chain)   return false;
+    if(SEL.state  &&h['State']!==SEL.state)   return false;
+    return true;
+  });
+}
+
+function toggleSel(dim, val){
+  SEL[dim] = SEL[dim]===val ? null : val;
+  updateAll();
+}
+
+/* ================================================================
+   POPULATE DROPDOWNS
+================================================================ */
+function populateDDs(){
+  const opt=(id,arr)=>{
+    const el=document.getElementById(id), first=el.options[0];
+    el.innerHTML=''; el.appendChild(first);
+    arr.forEach(v=>el.appendChild(new Option(v,v)));
+  };
+  opt('f-country',[...new Set(ALL.map(h=>h['Co']))].filter(Boolean).sort());
+  opt('f-chain',  [...new Set(ALL.map(h=>h['HC']))].filter(Boolean).sort());
+  opt('f-grade',  ['1성급','2성급','3성급','4성급','5성급']);
+  // USA State만 — 다른 국가의 국가명 제외
+  const usaStates=[...new Set(
+    ALL.filter(h=>h['Co']==='USA').map(h=>h['State'])
+  )].filter(Boolean).sort();
+  opt('f-state', usaStates);
+}
+
+/* ================================================================
+   HELPERS
+================================================================ */
+function countBy(data,key){
+  const m={};
+  data.forEach(h=>{ const v=h[key]||'미분류'; m[v]=(m[v]||0)+1; });
+  return m;
+}
+function sorted(map, lim=999){
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,lim);
+}
+
+const CFF = { family:"'Pretendard Variable','Pretendard',sans-serif" };
+function baseOpts(){
+  return {
+    responsive:true, maintainAspectRatio:true, animation:{duration:280},
+    plugins:{
+      legend:{ display:false },
+      tooltip:{
+        titleFont:{...CFF,size:13}, bodyFont:{...CFF,size:12},
+        backgroundColor:'rgba(14,29,62,.92)', titleColor:'#EEF4FF', bodyColor:'#7A8FAD',
+        padding:10, cornerRadius:8, borderWidth:0
+      }
+    },
+    scales:{
+      x:{ ticks:{font:{...CFF,size:12},color:'#7A8FAD'}, grid:{color:'rgba(0,0,0,.035)'}, border:{display:false} },
+      y:{ ticks:{font:{...CFF,size:12},color:'#7A8FAD'}, grid:{color:'rgba(0,0,0,.035)'}, border:{display:false} }
+    }
+  };
+}
+function mkChart(id,cfg){
+  if(CHARTS[id]){ CHARTS[id].data=cfg.data; CHARTS[id].options=cfg.options; CHARTS[id].update('none'); }
+  else CHARTS[id]=new Chart(document.getElementById(id),cfg);
+}
+
+/* ================================================================
+   UPDATE ALL
+================================================================ */
+function updateAll(){
+  updKPI(); updTags();
+  updCountry(); updGrade(); updTreemap();
+  updCCTable();
+  updMap(); updState(); updTable();
+}
+
+/* ── KPI ── */
+function updKPI(){
+  const tot=ALL.length, f=FD.length;
+  const con=FD.filter(h=>h['Contract']==='O').length;
+  const ratio=f?Math.round(con/f*100):0;
+  document.getElementById('kv-total').textContent = tot.toLocaleString();
+  document.getElementById('kv-filt').textContent  = f.toLocaleString();
+  document.getElementById('kv-con').textContent   = con.toLocaleString();
+  document.getElementById('kv-ratio').textContent = ratio+'%';
+  document.getElementById('kv-ctry').textContent  = new Set(FD.map(h=>h['Co'])).size;
+  document.getElementById('kv-chain').textContent = new Set(FD.map(h=>h['HC'])).size;
+  document.getElementById('hd-cnt').textContent   = `${f.toLocaleString()}개 호텔 표시 중`;
+  document.getElementById('finfo').textContent    = f<ALL.length ? `전체 ${ALL.length.toLocaleString()}개 중 ${f.toLocaleString()}개` : '';
+}
+
+/* ── FILTER TAGS ── */
+function updTags(){
+  const f=getDrop(), cont=document.getElementById('ftags');
+  cont.innerHTML='';
+  const drops=[
+    {id:'f-country',lbl:'국가',val:f.country},
+    {id:'f-chain',  lbl:'체인',val:f.chain},
+    {id:'f-grade',  lbl:'등급',val:f.grade},
+    {id:'f-contract',lbl:'계약',val:f.contract},
+    {id:'f-state',  lbl:'주',  val:f.state}
+  ];
+  const sels=[
+    {dim:'country',lbl:'차트:국가',val:SEL.country},
+    {dim:'grade',  lbl:'차트:등급',val:SEL.grade},
+    {dim:'chain',  lbl:'차트:체인',val:SEL.chain},
+    {dim:'state',  lbl:'차트:주',  val:SEL.state}
+  ];
+  drops.forEach(d=>{
+    if(!d.val) return;
+    const t=document.createElement('span'); t.className='ftag';
+    t.innerHTML=`${d.lbl}: ${d.val} <span class="ftag-x">✕</span>`;
+    t.onclick=()=>{ document.getElementById(d.id).value=''; applyFilters(); };
+    cont.appendChild(t);
+  });
+  sels.forEach(d=>{
+    if(!d.val) return;
+    const t=document.createElement('span'); t.className='ftag';
+    t.innerHTML=`${d.lbl}: ${d.val} <span class="ftag-x">✕</span>`;
+    t.onclick=()=>{ SEL[d.dim]=null; updateAll(); };
+    cont.appendChild(t);
+  });
+}
+
+/* ── CHART: COUNTRY ── */
+function updCountry(){
+  const base=cf('country');
+  const cm=countBy(base,'Co');
+  const ent=sorted(cm,10);
+  const sv=SEL.country;
+  const bg=ent.map(([k])=> sv ? (k===sv?'#3A80F4':'#3A80F428') : '#3A80F4CC');
+  mkChart('ch-country',{
+    type:'bar',
+    data:{labels:ent.map(e=>e[0]),datasets:[{data:ent.map(e=>e[1]),backgroundColor:bg,borderRadius:5,borderSkipped:false}]},
+    options:{...baseOpts(), indexAxis:'y',
+      onClick(e,els){ if(els.length) toggleSel('country',ent[els[0].index][0]); },
+      plugins:{...baseOpts().plugins,tooltip:{...baseOpts().plugins.tooltip,callbacks:{label:c=>` ${c.raw.toLocaleString()}개`}}},
+      scales:{x:{...baseOpts().scales.x},y:{...baseOpts().scales.y,ticks:{font:{...CFF,size:11},color:'#374971'}}}
+    }
+  });
+  document.getElementById('ch-country').style.cursor='pointer';
+  document.getElementById('bdg-country').textContent = sv||`${ent.length}개국`;
+}
+
+/* ── CHART: GRADE ── */
+function updGrade(){
+  const grades=['1성급','2성급','3성급','4성급','5성급'];
+  const base=cf('grade');
+  const gm=countBy(base,'Grade');
+  const sv=SEL.grade;
+  const bg=grades.map((g,i)=> sv ? (g===sv?GRADE_COL[i]:GRADE_COL[i]+'28') : GRADE_COL[i]+'CC');
+  mkChart('ch-grade',{
+    type:'bar',
+    data:{labels:grades,datasets:[{data:grades.map(g=>gm[g]||0),backgroundColor:bg,borderRadius:5,borderSkipped:false}]},
+    options:{...baseOpts(), indexAxis:'y',
+      onClick(e,els){ if(els.length) toggleSel('grade',grades[els[0].index]); },
+      plugins:{...baseOpts().plugins,tooltip:{...baseOpts().plugins.tooltip,callbacks:{label:c=>` ${c.raw.toLocaleString()}개`}}},
+      scales:{x:{...baseOpts().scales.x},y:{...baseOpts().scales.y,ticks:{font:{...CFF,size:11},color:'#374971'}}}
+    }
+  });
+  document.getElementById('ch-grade').style.cursor='pointer';
+  document.getElementById('bdg-grade').textContent = sv||'전체 등급';
+}
+
+/* ── TREEMAP ── */
+function updTreemap(){
+  const base=cf('chain');
+  const cm=countBy(base,'HC');
+  const ent=sorted(cm);
+  const tot=ent.reduce((s,[,v])=>s+v,0);
+  const sv=SEL.chain;
+  const wrap=document.getElementById('tm');
+  wrap.innerHTML='';
+  const W=wrap.clientWidth||300;
+  ent.forEach(([name,cnt],i)=>{
+    const pct=cnt/tot;
+    const w=Math.max(pct*W*0.97,56);
+    const h=Math.max(54,pct*290);
+    const cell=document.createElement('div');
+    cell.className='tmc'+(sv&&sv!==name?' dim':sv===name?' sel':'');
+    cell.style.cssText=`width:${Math.min(w,W)}px;height:${Math.min(h,115)}px;background:${CHAIN_COL[name]||PALETTE[i%PALETTE.length]}`;
+    const showLbl=w>62&&h>44;
+    cell.innerHTML=showLbl
+      ?`<div class="tmc-n">${cnt.toLocaleString()}</div><div class="tmc-l">${name}</div><div class="tmc-p">${(pct*100).toFixed(1)}%</div>`
+      :`<div class="tmc-n" style="font-size:1rem">${cnt}</div>`;
+    cell.title=`${name}: ${cnt.toLocaleString()}개 (${(pct*100).toFixed(1)}%)`;
+    cell.onclick=()=>toggleSel('chain',name);
+    wrap.appendChild(cell);
+  });
+  document.getElementById('bdg-chain').textContent = sv||`${ent.length}개 체인`;
+}
+
+/* ── CC TABLE ── */
+function updCCTable(){
+  const cm={};
+  FD.forEach(h=>{
+    const c=h['Co']||'미분류';
+    if(!cm[c]) cm[c]={t:0,con:0};
+    cm[c].t++;
+    if(h['Contract']==='O') cm[c].con++;
+  });
+  const ent=Object.entries(cm).sort((a,b)=>b[1].t-a[1].t);
+  const tbody=document.getElementById('cc-tbody');
+  tbody.innerHTML='';
+  ent.forEach(([co,{t,con}],i)=>{
+    const ratio=t?Math.round(con/t*100):0;
+    const color=PALETTE[i%PALETTE.length];
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><span class="ccflag" style="background:${color}"></span><strong>${co}</strong></td>
+      <td class="r">${t.toLocaleString()}</td>
+      <td class="r">${con.toLocaleString()}</td>
+      <td><div class="rbar"><div class="rbar-bg"><div class="rbar-fill" style="width:${ratio}%"></div></div>
+          <span class="rpct">${ratio}%</span></div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ── MAP ── */
+function initMap(){
+  myMap=L.map('map-box').setView([20,10],2);
+  // 한국어 고정 타일 (OSM Nominatim 한국어 렌더링 레이어)
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom:19,
+    // OSM 한국어 타일 서버 — lang=ko 파라미터 지원 레이어
+  }).addTo(myMap);
+  // 한국어 오버레이 타일 (지명을 한국어로 표시)
+  L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',{
+    attribution:'', maxZoom:20, opacity:0
+  }); // fallback 준비
+  // 실제 한국어 타일
+  myMap.eachLayer(l=>myMap.removeLayer(l));
+  L.tileLayer('https://tile-a.openstreetmap.fr/hot/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap contributors',maxZoom:19
+  }).addTo(myMap);
+
+  mLayer=L.layerGroup().addTo(myMap);
+  oLayer=L.layerGroup().addTo(myMap);
+
+  // 사업장 마커 — 클릭 시 activeOffice 설정
+  CFG.OFFICES.forEach(o=>{
+    function makeIcon(selected){
+      return L.divIcon({
+        html:`<div style="width:14px;height:14px;background:#00B7B7;border:${selected?'3px solid #FFD700':'2.5px solid #fff'};border-radius:3px;box-shadow:0 2px 8px rgba(79,53,212,.5);transform:${selected?'scale(1.3)':'scale(1)'};transition:transform .15s"></div>`,
+        className:'', iconAnchor:[7,7]
+      });
+    }
+    const marker = L.marker([o.lat,o.lng],{icon:makeIcon(false)});
+    marker.bindPopup(`
+      <div style="font-family:'Pretendard Variable',sans-serif;font-size:13px">
+        <b style="color:#00B7B7">${o.name}</b><br>
+        <span style="color:#7A8FAD;font-size:12px">사업장 · 클릭하여 반경 기준 설정</span>
+      </div>`);
+    marker.on('click', ()=>{
+      // 기존 선택 해제
+      CFG.OFFICES.forEach((_o,idx)=>{
+        const m = oLayer.getLayers()[idx];
+        if(m) m.setIcon(makeIcon(false));
+      });
+      if(activeOffice === o){
+        // 같은 사업장 재클릭 → 선택 해제
+        activeOffice = null;
+      } else {
+        activeOffice = o;
+        marker.setIcon(makeIcon(true));
+      }
+      // 반경 필터가 활성화돼 있으면 즉시 재적용
+      if(activeR > 0){
+        rCircles.forEach(c=>myMap.removeLayer(c)); rCircles=[];
+        if(activeOffice){
+          const c = L.circle([activeOffice.lat,activeOffice.lng],{
+            radius:activeR*1000,color:'#00B7B7',fillOpacity:.06,weight:2,dashArray:'6,4'
+          });
+          c.addTo(myMap); rCircles.push(c);
+        }
+        applyFilters();
+      }
+    });
+    marker.addTo(oLayer);
+  });
+
+  // 범례 동적 생성 (CHAIN_COL 기준)
+  const leg=document.getElementById('map-legend');
+  if(leg){
+    leg.innerHTML='';
+    Object.entries(CHAIN_COL).forEach(([name,color])=>{
+      leg.innerHTML+=`<div class="mli"><div class="mld" style="background:${color}"></div>${name}</div>`;
+    });
+    leg.innerHTML+=`<div class="mli"><div class="mls" style="background:#00B7B7"></div>사업장</div>`;
+  }
+}
+
+function updMap(){
+  mLayer.clearLayers();
+  const vis=applySel(FD); // 전체 표시
+  vis.forEach(h=>{
+    const lat=+h['Lat'], lng=+h['Lon'];
+    if(isNaN(lat)||isNaN(lng)) return;
+    const chain=h['HC']||'Other';
+    const isC=h['Contract']==='O';
+    // 체인별 색상 (Treemap과 동일)
+    const col=CHAIN_COL[chain]||CHAIN_COL['Other'];
+    // 계약 호텔은 테두리 흰색 + 약간 크게
+    const m=L.circleMarker([lat,lng],{
+      radius:isC?7:5,
+      fillColor:col,
+      color:'#fff',
+      weight:isC?2:1,
+      fillOpacity:isC?.95:.75
+    });
+    m.bindPopup(`
+      <div style="font-family:'Pretendard Variable',sans-serif;min-width:180px;font-size:13px">
+        <div style="font-weight:800;color:#0E1D3E;margin-bottom:3px">${h['Name']}</div>
+        <div style="color:#7A8FAD;margin-bottom:5px">${h['Co']}${h['State']?', '+h['State']:''}</div>
+        <hr style="border:none;border-top:1px solid #DDE4EF;margin:5px 0">
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+          <div style="width:9px;height:9px;border-radius:50%;background:${col};flex-shrink:0"></div>
+          <b>${chain}</b>
+        </div>
+        <b>등급:</b> ${h['Grade']||'-'}<br>
+        <b>계약:</b> <span style="color:${isC?col:'#B8C5D9'};font-weight:700">${h['Contract']}</span>
+        ${h['Add']?`<div style="color:#7A8FAD;margin-top:3px;font-size:12px">${h['Add']}</div>`:''}
+        <div style="margin-top:5px;display:flex;gap:5px">
+          ${h['Map']?`<a href="${h['Map']}" target="_blank" style="color:#3A80F4;font-weight:700">지도</a>`:''}
+          ${h['URL']&&h['URL']!=='#'?`<a href="${h['URL']}" target="_blank" style="color:#4F35D4;font-weight:700">홈피</a>`:''}
+        </div>
+      </div>`);
+    m.addTo(mLayer);
+  });
+}
+
+/* ── STATE BARS ── */
+function updState(){
+  const base=cf('state').filter(h=>h['Co']==='USA');
+  const sm=countBy(base,'State');
+  const ent=sorted(sm);
+  const max=ent[0]?.[1]||1;
+  const sv=SEL.state;
+  const cont=document.getElementById('sb');
+  cont.innerHTML='';
+  if(!ent.length){ cont.innerHTML='<div class="empty">미국 데이터 없음</div>'; return; }
+  ent.forEach(([st,cnt])=>{
+    const pct=(cnt/max*100).toFixed(1);
+    const isSel=sv===st, isDim=sv&&!isSel;
+    const row=document.createElement('div');
+    row.className='sbrow'+(isSel?' sel':isDim?' dim':'');
+    row.innerHTML=`<div class="sblbl">${st}</div>
+      <div class="sbt"><div class="sbf${isSel?' sel':''}" style="width:${pct}%"></div></div>
+      <div class="sbval">${cnt}</div>`;
+    row.onclick=()=>toggleSel('state',st);
+    cont.appendChild(row);
+  });
+}
+
+/* ── CONTRACT HOTEL TABLE ── */
+function updTable(){
+  const MAX=500;
+  // 계약 호텔만 필터
+  const disp=applySel(FD).filter(h=>h['Contract']==='O');
+  document.getElementById('tsub').textContent=`계약 호텔 ${disp.length.toLocaleString()}개 · 최대 ${Math.min(disp.length,MAX)}개 표시`;
+  const tbody=document.getElementById('ht-body');
+  tbody.innerHTML='';
+  disp.slice(0,MAX).forEach(h=>{
+    const gr=h['Grade']||'', stars=gr?'★'.repeat(parseInt(gr)||0):'-';
+    const chain=h['HC']||'-';
+    const col=CHAIN_COL[chain]||'#94A3B8';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><span class="ctag" style="background:${col}22;color:${col}">${chain}</span></td>
+      <td>${h['Co']||'-'}</td>
+      <td style="max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:var(--t1)">${h['Name']||'-'}</td>
+      <td><span class="star">${stars}</span></td>
+      <td style="max-width:155px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.88rem;color:var(--t3)">${h['Add']||'-'}</td>
+      <td style="white-space:nowrap">
+        ${h['Map']?`<a href="${h['Map']}" target="_blank" class="lbtn">지도</a> `:''}
+        ${h['URL']&&h['URL']!=='#'?`<a href="${h['URL']}" target="_blank" class="lbtn vi">홈피</a>`:''}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ================================================================
+   INIT
+================================================================ */
+(async ()=>{
+  try {
+    initMap();
+    await loadData();
+    populateDDs();
+    FD = [...ALL];
+    updateAll();
+    ['f-country','f-chain','f-grade','f-contract','f-state']
+      .forEach(id => document.getElementById(id).addEventListener('change', applyFilters));
+    document.getElementById('btn-reset').addEventListener('click', resetAll);
+  } catch(err) {
+    console.error('Dashboard init error:', err);
+  } finally {
+    const ov = document.getElementById('lov');
+    if(ov){ ov.classList.add('gone'); setTimeout(()=>ov.remove(), 400); }
+  }
+})();
+</script>
+</body>
+</html>
