@@ -4,17 +4,11 @@ description: 전세계 주요 호텔 체인들의 호텔과 계약 여부 등을
 slug: ai-global-hotel-dashboard
 date: 2026-03-17T21:31:39+09:00
 image: 20260317220919.png
-categories:
-  - Project
-tags:
-  - 호텔
-  - Hotel
-  - 해외출장
-  - 대시보드
-  - Dashboard
+categories: [Project]
+tags: [호텔, Hotel, 해외출장, 대시보드, Dashboard]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-03-17 22:09
+updated: 2026-03-18 21:02
 ---
 
 # Global Hotel Dashboard
