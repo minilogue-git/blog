@@ -1,7 +1,7 @@
 # Change baseurl before deploy
-baseurl      = "https://starter.stack.jimmycai.com/"
+baseurl      = "https://juheon.com/"
 languageCode = "ko-kr"
-title        = "Hugo Theme Stack Starter"
+title        = "JU HEON's BLOG"
 
 # Theme i18n support
 # See all available values at https://github.com/CaiJimmy/hugo-theme-stack/tree/master/i18n
@@ -16,3 +16,8 @@ disqusShortname = "ju-heons-blog"
 
 [pagination]
     pagerSize = 5
+
+[sitemap]
+  changefreq = "weekly"
+  priority = 0.5
+  filename = "sitemap.xml"
