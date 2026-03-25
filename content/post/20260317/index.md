@@ -8,7 +8,7 @@ categories: [Project]
 tags: [호텔, Hotel, 해외출장, 대시보드, Dashboard]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-03-18 21:02
+updated: 2026-03-26 05:41
 ---
 
 # Global Hotel Dashboard
@@ -43,3 +43,8 @@ updated: 2026-03-18 21:02
 
 > [!SUCCESS] **Dashboard 공유**
 > - [🌐 새 창에서 Dashboard 열기(Ctrl + 클릭)](/files/global_hotel.html)
+
+---
+- 2026.03.25 
+	- 기존 Open Street Map 지도가 "예쁘지 않다"는 의견이 있어서 대안으로 무료로 사용할 수 있는 타일(Tile)들의 이미지와 코드를 포스팅 했습니다.
+	- [Global Hotel Dashboard 지도 타일 변경]({{< relref "post/20260325/index.md" >}})
