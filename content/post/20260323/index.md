@@ -8,7 +8,7 @@ categories: [Life]
 tags: [날씨, Meteogram, 노르웨이, 기상청, Weawow, Widget, Weather]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-03-25 06:05
+updated: 2026-03-25 08:41
 ---
 
 # Meteogram Weather Widget

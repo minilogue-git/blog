@@ -5,10 +5,10 @@ slug: change-hotel-dashboard-maps
 date: 2026-03-25T05:41:42+09:00
 image: 20260325061827.png
 categories: [Project]
-tags: [타일, Tile, 지도, 맵, Map]
+tags: [타일, Tile, 지도, 맵]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-03-26 05:37
+updated: 2026-03-27 05:27
 ---
 
 # 지도가 예쁘지가 않아.
