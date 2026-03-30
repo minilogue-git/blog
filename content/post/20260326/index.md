@@ -4,22 +4,11 @@ description: 해외 결제 이벤트로 여행갈 때마다 돈을 쓰지만 뭔
 slug: smart-spending-travel-rewards
 date: 2026-03-26T12:15:15+09:00
 image: 20260327060729.png
-categories:
-  - Travel
-tags:
-  - 신용카드
-  - 결제
-  - 이벤트
-  - 캐시백
-  - 리워드
-  - JCB
-  - UnionPay
-  - Master
-  - Visa
-  - 체크카드
+categories: [Travel]
+tags: [신용카드, 결제, 이벤트, 캐시백, 리워드, JCB, UnionPay, Master, Visa, 체크카드]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-03-27 05:27
+updated: 2026-03-30 05:32
 ---
 
 # 트래블로그 카드가 쏘아올린 공
