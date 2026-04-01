@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>코딩의 3단계: HTML, CSS, JS 이해하기</title>
+    <style>
+        :root {
+            --primary-color: #0078d4;
+            --bg-color: #f3f2f1;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: #323130;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .intro-box {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        /* Tabs Styling */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            border: none;
+            background: #e1dfdd;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .content-section {
+            display: none;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            min-height: 400px;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .explanation {
+            background: #fff9db;
+            padding: 10px 15px;
+            border-left: 5px solid #fcc419;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* --- STEP 1: HTML ONLY (No Styling applied here, strictly handled inside the container) --- */
+        .html-only-box {
+            all: unset; /* Reset styles for pure demo */
+        }
+
+        /* --- STEP 2: CSS DEMO CLASSES --- */
+        .modern-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .modern-table th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        .modern-table td {
+            padding: 12px;
+            border-bottom: 1px solid #edebe9;
+        }
+        .modern-table tr:hover {
+            background-color: #f9f9f9;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .status-ok { background: #dff6dd; color: #107c10; }
+        .status-warn { background: #fff4ce; color: #797775; }
+
+        /* --- STEP 3: JS DEMO --- */
+        .search-box {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        .search-box input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex: 1;
+        }
+        .json-viewer {
+            background: #2b2b2b;
+            color: #a9dc76;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🏢 총무팀을 위한 웹 개발 기초</h1>
+        <p>엑셀 데이터가 어떻게 웹 서비스가 되는지 확인해보세요.</p>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab(1)">1단계: HTML (뼈대)</button>
+        <button class="tab-btn" onclick="showTab(2)">2단계: + CSS (디자인)</button>
+        <button class="tab-btn" onclick="showTab(3)">3단계: + JS (기능/DB)</button>
+    </div>
+
+    <!-- Step 1: HTML Only -->
+    <div id="step1" class="content-section active">
+        <div class="explanation">
+            <strong>💡 설명:</strong> HTML은 웹사이트의 <strong>'내용'</strong>과 <strong>'구조'</strong>만 담당합니다. 엑셀로 치면 서식 없이 텍스트만 입력한 상태와 같습니다.
+        </div>
+        
+        <!-- 원시 HTML 모습 재현 -->
+        <div style="border: 1px solid #ccc; padding: 10px;">
+            <h1>비품 관리 대장</h1>
+            <p>현재 보유 중인 사무용품 목록입니다.</p>
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>품목명</th>
+                        <th>수량</th>
+                        <th>상태</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>A4 용지</td>
+                        <td>50</td>
+                        <td>충분</td>
+                    </tr>
+                    <tr>
+                        <td>모나미 볼펜</td>
+                        <td>5</td>
+                        <td>부족</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Step 2: HTML + CSS -->
+    <div id="step2" class="content-section">
+        <div class="explanation">
+            <strong>💡 설명:</strong> CSS는 웹사이트의 <strong>'스타일'</strong>을 담당합니다. 엑셀의 '셀 서식', '조건부 서식', '색상 채우기'와 같은 역할을 하여 가독성을 높여줍니다.
+        </div>
+
+        <h2>📦 비품 관리 시스템 (Styled)</h2>
+        <p>디자인이 가미되어 훨씬 보기 편해졌습니다.</p>
+        
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>품목명</th>
+                    <th>수량</th>
+                    <th>상태</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>A4 용지</td>
+                    <td>50</td>
+                    <td><span class="status-badge status-ok">✅ 정상</span></td>
+                </tr>
+                <tr>
+                    <td>모나미 볼펜</td>
+                    <td>5</td>
+                    <td><span class="status-badge status-warn">⚠️ 재주문 필요</span></td>
+                </tr>
+                <tr>
+                    <td>무선 마우스</td>
+                    <td>12</td>
+                    <td><span class="status-badge status-ok">✅ 정상</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Step 3: HTML + CSS + JS (JSON) -->
+    <div id="step3" class="content-section">
+        <div class="explanation">
+            <strong>💡 설명:</strong> JavaScript는 <strong>'동작'</strong>을 담당하고, JSON(또는 SharePoint)은 <strong>'데이터'</strong>를 저장합니다. 이제 검색이 가능하고, 데이터를 외부에서 불러올 수 있습니다.
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="품목명을 검색하세요..." onkeyup="filterData()">
+            <button class="tab-btn active" style="flex: 0; min-width: 80px;" onclick="renderTable()">🔄 새로고침</button>
+        </div>
+
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>품목명</th>
+                    <th>수량</th>
+                    <th>위치</th>
+                    <th>상태</th>
+                </tr>
+            </thead>
+            <tbody id="inventoryBody">
+                <!-- JS로 데이터가 채워질 공간 -->
+            </tbody>
+        </table>
+
+        <div class="json-viewer">
+            <strong>📂 가상의 DB 데이터 (JSON 형식):</strong>
+            <pre id="jsonDisplay"></pre>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 가상의 데이터베이스 (SharePoint List나 JSON 파일 역할을 함)
+    const inventoryData = [
+        { id: 1, name: "A4 용지 (80g)", qty: 45, location: "1번 캐비닛", status: "정상" },
+        { id: 2, name: "모나미 153 볼펜", qty: 3, location: "탕비실 서랍", status: "부족" },
+        { id: 3, name: "로지텍 무선 마우스", qty: 10, location: "전산 비품실", status: "정상" },
+        { id: 4, name: "포스트잇 (노랑)", qty: 25, location: "1번 캐비닛", status: "정상" },
+        { id: 5, name: "맥스 스테이플러 심", qty: 2, location: "전산 비품실", status: "부족" }
+    ];
+
+    // 탭 전환 함수
+    function showTab(step) {
+        document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        
+        document.getElementById('step' + step).classList.add('active');
+        document.querySelectorAll('.tab-btn')[step-1].classList.add('active');
+
+        if(step === 3) {
+            renderTable();
+            document.getElementById('jsonDisplay').textContent = JSON.stringify(inventoryData, null, 2);
+        }
+    }
+
+    // 데이터를 테이블에 그리는 함수 (JS의 역할)
+    function renderTable(filter = "") {
+        const tbody = document.getElementById('inventoryBody');
+        tbody.innerHTML = "";
+
+        const filtered = inventoryData.filter(item => item.name.includes(filter));
+
+        filtered.forEach(item => {
+            const row = document.createElement('tr');
+            const statusClass = item.qty < 5 ? 'status-warn' : 'status-ok';
+            const statusIcon = item.qty < 5 ? '⚠️' : '✅';
+
+            row.innerHTML = `
+                <td>${item.name}</td>
+                <td>${item.qty}</td>
+                <td>${item.location}</td>
+                <td><span class="status-badge ${statusClass}">${statusIcon} ${item.status}</span></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // 실시간 검색 기능 (JS의 역할)
+    function filterData() {
+        const keyword = document.getElementById('searchInput').value;
+        renderTable(keyword);
+    }
+
+    // 초기 실행
+    window.onload = () => {
+        // 처음엔 1단계만 보여주기
+    };
+</script>
+
+</body>
+</html>

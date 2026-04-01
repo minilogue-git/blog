@@ -8,7 +8,7 @@ categories: [Work]
 tags: [공장, 붕괴, 소송]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-03-20 17:51
+updated: 2026-04-01 06:06
 ---
 
 # 신축중이던 공장이 붕괴되었다.

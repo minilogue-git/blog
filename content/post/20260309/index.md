@@ -8,7 +8,7 @@ categories: [Travel]
 tags: [여행, 제주도, 폭설, 도쿄]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-03-17 22:09
+updated: 2026-04-01 06:06
 ---
 
 # 제주도 한달살기
