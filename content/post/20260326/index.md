@@ -8,7 +8,7 @@ categories: [Travel]
 tags: [신용카드, 결제, 이벤트, 캐시백, 리워드, JCB, UnionPay, Master, Visa, 체크카드]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-03-30 05:32
+updated: 2026-03-30 14:16
 ---
 
 # 트래블로그 카드가 쏘아올린 공

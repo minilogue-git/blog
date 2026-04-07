@@ -4,22 +4,11 @@ description: 총무팀 직원들을 대상으로 Power Platforms 교육을 하�
 slug: power-platform-staff-training
 date: 2026-04-01T05:58:01+09:00
 image: 20260402053947.png
-categories:
-  - Work
-tags:
-  - Power
-  - Platforms
-  - Pages
-  - Automate
-  - BI
-  - Apps
-  - AI
-  - HTML
-  - CSS
-  - JavaScript
+categories: [Work]
+tags: [Power, Platforms, Pages, Automate, BI, Apps, AI, HTML, CSS, JavaScript]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-04-02 06:10
+updated: 2026-04-06 06:03
 ---
 
 # 결국 나보고 교육을 하라고 한다.
