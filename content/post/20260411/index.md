@@ -3,9 +3,17 @@ title: 담당 임원 산하 팀장, 실무자들 대상으로 AI Workshop
 description: 이제는 AI Workshop까지 진행하라고 한다.
 slug: ai-workshop-for-management-teams
 date: 2026-04-11T07:45:59+09:00
-image: ""
-categories: [Work]
-tags: [AI, Workshop, 워크숍, Gemini, Claude, Perplexity, Copilot]
+image: 20260414063004.png
+categories:
+  - Work
+tags:
+  - AI
+  - Workshop
+  - 워크숍
+  - Gemini
+  - Claude
+  - Perplexity
+  - Copilot
 weight: 0
 created: 2026-02-24 21:23
 updated: 2026-04-15 06:12
