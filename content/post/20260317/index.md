@@ -8,7 +8,7 @@ categories: [Project]
 tags: [호텔, Hotel, 해외출장, 대시보드, Dashboard]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-04-01 06:05
+updated: 2026-04-14 13:21
 ---
 
 # Global Hotel Dashboard

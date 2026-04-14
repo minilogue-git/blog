@@ -4,15 +4,11 @@ description: 나는 내 휴대폰에서 아내의 신용카드를 사용하고, 
 slug: naver-samsung-pay-spouse-share
 date: 2026-04-06T06:03:13+09:00
 image: 20260408052413.png
-categories:
-  - Life
-tags:
-  - 네이버페이
-  - 삼성페이
-  - Macrodroid
+categories: [Life]
+tags: [네이버페이, 삼성페이, Macrodroid]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-04-08 05:25
+updated: 2026-04-11 07:45
 ---
 
 # 카드가 많아지면 할 일이 많아진다.

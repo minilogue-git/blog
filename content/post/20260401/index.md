@@ -8,7 +8,7 @@ categories: [Work]
 tags: [Power, Platforms, Pages, Automate, BI, Apps, AI, HTML, CSS, JavaScript]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-04-06 06:03
+updated: 2026-04-13 13:01
 ---
 
 # 결국 나보고 교육을 하라고 한다.
