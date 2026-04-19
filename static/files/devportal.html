@@ -1,0 +1,2027 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚀 총무팀 개발 포탈</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy: #203B8A;
+  --blue: #3A80F4;
+  --bg-light: #F6F8FA;
+  --bg-muted: #EEF2F6;
+  --white: #ffffff;
+  --text-primary: #1a2540;
+  --text-secondary: #4a5568;
+  --text-muted: #8a96a8;
+  --border: #dde3ec;
+  --border-strong: #c4cedb;
+  --success: #16a34a;
+  --success-bg: #f0fdf4;
+  --shadow-sm: 0 1px 3px rgba(32,59,138,0.08);
+  --shadow-md: 0 4px 16px rgba(32,59,138,0.12);
+  --shadow-lg: 0 8px 32px rgba(32,59,138,0.18);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --transition: 0.18s ease;
+}
+
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-light);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ===== LAYOUT ===== */
+.app-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ===== HEADER ===== */
+.header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--navy), var(--blue));
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: -0.3px;
+}
+
+.logo-text span {
+  color: var(--blue);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-muted);
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  background: var(--blue);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+}
+
+/* ===== HERO ===== */
+.hero {
+  background: linear-gradient(135deg, var(--navy) 0%, #2d56c8 60%, var(--blue) 100%);
+  color: white;
+  padding: 20px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -80%;
+  right: -5%;
+  width: 300px;
+  height: 300px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 50%;
+}
+
+.hero-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.hero-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  margin-bottom: 4px;
+}
+
+.hero-subtitle {
+  padding-left: 35px;
+  font-size: 13px;
+  opacity: 0.78;
+  font-weight: 400;
+}
+
+.stats-row {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.stat-card {
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  text-align: center;
+  min-width: 80px;
+}
+
+.stat-num {
+  font-size: 20px;
+  font-weight: 700;
+  display: block;
+}
+
+.stat-label {
+  font-size: 11px;
+  opacity: 0.75;
+  display: block;
+  margin-top: 1px;
+}
+
+@media (max-width: 640px) {
+  .hero-inner { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .stats-row { flex-wrap: wrap; }
+}
+
+/* ===== TAB NAV ===== */
+.tab-nav {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  position: sticky;
+  top: 68px;
+  z-index: 90;
+}
+
+.tab-nav-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  gap: 0;
+}
+
+.tab-btn {
+  padding: 14px 20px;
+  border: none;
+  background: none;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab-btn:hover { color: var(--blue); }
+
+.tab-btn.active {
+  color: var(--navy);
+  border-bottom-color: var(--blue);
+  font-weight: 600;
+}
+
+.tab-badge {
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  border-radius: 100px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tab-btn.active .tab-badge {
+  background: var(--blue);
+  color: white;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main {
+  padding: 28px 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ===== TOOLBAR ===== */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  flex: 1;
+  min-width: 220px;
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 9px 12px 9px 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  background: var(--white);
+  color: var(--text-primary);
+  transition: var(--transition);
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(58,128,244,0.12);
+}
+
+.filter-select {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px;
+  background: var(--white);
+  color: var(--text-primary);
+  cursor: pointer;
+  outline: none;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.refresh-new-btn {
+  padding: 8px 14px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.refresh-new-btn:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: #f0f5ff;
+}
+
+/* ===== TABLE ===== */
+.table-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+thead {
+  background: var(--bg-muted);
+}
+
+thead th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+/* 열별 너비 고정 */
+.col-no    { width: 26px; }
+.col-name  { width: 255px; }
+.col-dev   { width: 100px; white-space: nowrap; }
+.col-purpose { width: 195px; }
+.col-url   { width: 100px; }
+.col-ver   { width: 52px; }
+.col-update { min-width: 160px; }
+.col-perm  { width: 70px; white-space: nowrap; }
+.col-opinion { width: 70px; }
+.col-action { width: 96px; }
+
+thead th:first-child { border-radius: 0; }
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+
+tbody tr:last-child { border-bottom: none; }
+
+tbody tr:hover { background: #f7f9ff; }
+
+tbody td {
+  padding: 14px 16px;
+  vertical-align: middle;
+  color: var(--text-primary);
+}
+
+.site-name {
+  font-weight: 600;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+}
+
+.perm-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.perm-all {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.perm-team {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.perm-restricted {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.url-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--blue);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 13px;
+  transition: var(--transition);
+}
+
+.url-link:hover {
+  color: var(--navy);
+  text-decoration: underline;
+}
+
+.dev-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.dev-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--navy), var(--blue));
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.opinion-summary {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.opinion-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #fff7ed;
+  color: #c2410c;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.opinion-count.done {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--white);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--navy);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.action-btn:hover {
+  background: var(--navy);
+  color: white;
+  border-color: var(--navy);
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text-muted);
+}
+
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-title { font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+.empty-sub { font-size: 13px; }
+
+/* ===== LOADING ===== */
+.loading-row td {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--navy);
+  color: white;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toast.success { background: #166534; }
+.toast.error { background: #991b1b; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.55);
+  backdrop-filter: blur(3px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(20px) scale(0.97);
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.modal-overlay.open .modal {
+  transform: translateY(0) scale(1);
+}
+
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  background: var(--white);
+  z-index: 1;
+}
+
+.modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--navy);
+}
+
+.modal-close {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: var(--bg-muted);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.modal-close:hover {
+  background: var(--navy);
+  color: white;
+}
+
+.modal-body {
+  padding: 20px 24px;
+}
+
+.modal-section {
+  margin-bottom: 20px;
+}
+
+.modal-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ===== FIELD EDITABLE ===== */
+.field-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bg-muted);
+}
+
+.field-row:last-child { border-bottom: none; }
+
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding-top: 6px;
+}
+
+.field-value {
+  font-size: 14px;
+  color: var(--text-primary);
+  position: relative;
+}
+
+.editable-text {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  background: transparent;
+  color: var(--text-primary);
+  transition: var(--transition);
+  resize: vertical;
+  outline: none;
+}
+
+.editable-text:hover {
+  border-color: var(--border);
+  background: var(--bg-light);
+}
+
+.editable-text:focus {
+  border-color: var(--blue);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(58,128,244,0.1);
+}
+
+/* ===== OPINIONS (TODO LIST) ===== */
+.opinion-add {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.opinion-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: var(--transition);
+}
+
+.opinion-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(58,128,244,0.1);
+}
+
+.opinion-name-input {
+  width: 110px;
+  flex-shrink: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: var(--transition);
+  background: var(--bg-light);
+  color: var(--text-primary);
+}
+
+.opinion-name-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(58,128,244,0.1);
+  background: var(--white);
+}
+
+.opinion-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.add-btn {
+  padding: 8px 14px;
+  background: var(--blue);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.add-btn:hover { background: var(--navy); }
+
+.opinion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.opinion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-light);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.opinion-item:hover { border-color: var(--blue); background: #f7f9ff; }
+
+.opinion-cb {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--blue);
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+.opinion-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  flex: 1;
+  line-height: 1.5;
+  transition: var(--transition);
+}
+
+.opinion-text.done {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.opinion-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.opinion-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 0 2px;
+  transition: var(--transition);
+}
+
+.opinion-delete:hover { color: #dc2626; }
+
+.empty-opinions {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ===== SAVE BUTTON ===== */
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  position: sticky;
+  bottom: 0;
+  background: var(--white);
+}
+
+.btn-cancel {
+  padding: 9px 18px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-cancel:hover { background: var(--bg-muted); }
+
+.btn-save {
+  padding: 9px 20px;
+  background: var(--navy);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-save:hover { background: var(--blue); }
+
+/* ===== COMPLETED VIEW ===== */
+.completed-section {
+  display: none;
+}
+
+.completed-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.completed-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.completed-site-name {
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 15px;
+}
+
+.completed-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.completed-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--success-bg);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--success);
+}
+
+.completed-check {
+  color: var(--success);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.completed-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: line-through;
+  flex: 1;
+}
+
+/* ===== TOOLTIP ===== */
+.tooltip-wrap { position: relative; }
+.tooltip-text {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--navy);
+  color: white;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  margin-bottom: 4px;
+  transition: opacity 0.15s;
+}
+
+.tooltip-wrap:hover .tooltip-text { opacity: 1; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .hero { padding: 28px 16px; }
+  .hero-title { font-size: 22px; }
+  .stats-row { gap: 10px; }
+  .main { padding: 16px; }
+  .header-inner { padding: 12px 16px; }
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .search-wrap { min-width: unset; }
+  .field-row { grid-template-columns: 1fr; }
+  .field-label { padding-top: 0; }
+}
+
+/* ===== INFO BANNER ===== */
+.info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: #1e40af;
+  margin-bottom: 18px;
+}
+
+.update-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+  margin-top: 5px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ===== DIVIDER ===== */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0;
+}
+
+/* Cell text truncate */
+.truncate {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.truncate:hover {
+  overflow: visible;
+  white-space: normal;
+}
+
+.purpose-cell {
+  max-width: 200px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ===== HEADER SHORTCUT ICONS (SVG) ===== */
+.header-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.header-actions{
+  display:flex;
+  align-items:center;
+.shortcut-link.pa svg{ fill:#2563eb; } /* Power Automate */  gap:10px;
+.shortcut-link.sp svg{ fill:#16a34a; } /* SharePoint */
+
+@media (max-width:768px){
+  .shortcut-link{ width:34px; height:34px; border-radius:11px; }
+  .shortcut-ico{ width:17px; height:17px; }
+}
+}
+
+.header-shortcuts{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.shortcut-link{
+  width:36px;
+  height:36px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:var(--white);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:var(--transition);
+  text-decoration:none;
+  box-shadow:0 1px 0 rgba(32,59,138,0.03);
+}
+
+.shortcut-link:hover{
+  border-color:var(--blue);
+  transform:translateY(-1px);
+  box-shadow:var(--shadow-sm);
+}
+
+.shortcut-link:active{
+  transform:translateY(0);
+}
+
+.shortcut-ico{
+  width:18px;
+  height:18px;
+  display:block;
+}
+
+/* 서비스별 포인트 컬러 */
+.shortcut-link.pp svg{ fill:#6b46c1; } /* Power Pages */
+
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">🚀</div>
+      <span class="logo-text">Dev<span>Portal</span></span>
+    </div>
+	
+	<div class="header-actions">
+	  <div class="header-shortcuts">
+
+		<!-- Power Pages -->
+		<a class="shortcut-link pp"
+		   href="https://make.powerpages.microsoft.com/"
+		   target="_blank" alt="Power Pages" rel="noopener noreferrer"
+		   title="Power Pages" aria-label="Power Pages">
+		  <svg class="shortcut-ico" viewBox="0 0 24 24" aria-hidden="true">
+			<path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1.1 5.2c2.5 0 4 1.4 4 3.6 0 2.3-1.6 3.7-4.2 3.7H10.8V17H9V7.2h4.1zm-.3 5.6c1.5 0 2.4-.7 2.4-2s-.9-1.9-2.4-1.9h-2v3.9h2z"/>
+		  </svg>
+		</a>
+
+		<!-- Power Automate -->
+		<a class="shortcut-link pa"
+		   href="https://make.powerautomate.com/"
+		   target="_blank" alt="Power Automate" rel="noopener noreferrer"
+		   title="Power Automate" aria-label="Power Automate">
+		  <svg class="shortcut-ico" viewBox="0 0 24 24" aria-hidden="true">
+			<path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/>
+		  </svg>
+		</a>
+
+		<!-- SharePoint -->
+		<a class="shortcut-link sp"
+		   href="https://{테넌트}.sharepoint.com/"
+		   target="_blank" alt="SharePoint" rel="noopener noreferrer"
+		   title="SharePoint" aria-label="SharePoint">
+		  <svg class="shortcut-ico" viewBox="0 0 24 24" aria-hidden="true">
+			<path d="M10 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2h-8l-2-2z"/>
+		  </svg>
+		</a>
+
+	  </div>
+	</div>
+	
+  </div>
+</header>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-title">🛠️ 총무팀 개발 포탈</div>
+      <div class="hero-subtitle">Power Pages 바이브 코딩 &amp; Low-Code 프로젝트 허브 — 업데이트를 놓치지 마세요!</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-num" id="stat-total">-</span>
+        <span class="stat-label">전체 사이트</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="stat-pending">-</span>
+        <span class="stat-label">미완료 의견</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="stat-done">-</span>
+        <span class="stat-label">완료된 의견</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="stat-devs">-</span>
+        <span class="stat-label">참여 개발자</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB NAV ===== -->
+<nav class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="switchTab('sites')">
+      📋 사이트 목록 <span class="tab-badge" id="badge-sites">0</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('completed')">
+      ✅ 완료된 의견 <span class="tab-badge" id="badge-done">0</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ===== MAIN ===== -->
+<main class="main">
+
+  <!-- Sites Tab -->
+  <div id="tab-sites">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" placeholder="사이트명, 개발자, 목적으로 검색..." id="searchInput" oninput="filterTable()">
+      </div>
+      <select class="filter-select" id="devFilter" onchange="filterTable()">
+        <option value="">👤 개발자 전체</option>
+      </select>
+      <select class="filter-select" id="permFilter" onchange="filterTable()">
+        <option value="">🔒 권한 전체</option>
+        <option value="전체">전체 공개</option>
+        <option value="팀">팀 내부</option>
+        <option value="제한">제한</option>
+      </select>
+      <div class="toolbar-right">
+        <button class="refresh-new-btn" onclick="loadData()">🔄 새로고침</button>
+		<button class="refresh-new-btn" onclick="openNewModal()">➕ 사이트 신규 등록</button>
+      </div>
+    </div>
+
+    <div class="info-banner">
+      <div class="update-dot"></div>
+      <div>
+        <strong>📢 사용 안내:</strong> 각 행의 <strong>상세보기</strong>를 클릭하면 정보를 수정하고 팀원 의견(익명 가능)을 추가할 수 있어요. 
+        내용을 업데이트하면 Flow를 통해 자동으로 반영됩니다!
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-scroll">
+        <table id="siteTable">
+          <thead>
+            <tr>
+              <th class="col-no">#</th>
+              <th class="col-name">사이트 명칭</th>
+              <th class="col-dev">개발자</th>
+              <th class="col-purpose">이용 목적</th>
+              <th class="col-url">URL</th>
+              <th class="col-ver">버전</th>
+              <th class="col-update">주요 업데이트</th>
+              <th class="col-perm">권한</th>
+              <th class="col-opinion">팀원 의견</th>
+              <th class="col-action">상세</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr class="loading-row">
+              <td colspan="10">
+                <span class="spinner"></span> 데이터를 불러오는 중입니다...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Completed Tab -->
+  <div id="tab-completed" style="display:none;">
+    <div class="info-banner" style="background:#f0fdf4; border-color:#bbf7d0; color:#166534;">
+      <span>✅</span>
+      <span>개발자가 완료 처리한 팀원 의견 목록입니다. 취소선으로 표시된 항목들이에요!</span>
+    </div>
+    <div id="completedList">
+      <div class="empty-state">
+        <div class="empty-icon">✨</div>
+        <div class="empty-title">완료된 의견이 없어요</div>
+        <div class="empty-sub">팀원 의견을 완료 처리하면 여기에 표시됩니다.</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">사이트 상세 정보</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">모든 팀원이 수정할 수 있어요 ✏️</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- 기본 정보 -->
+      <div class="modal-section">
+        <div class="modal-section-title">📌 기본 정보</div>
+        <div class="field-row">
+          <div class="field-label">사이트 명칭</div>
+          <div class="field-value">
+            <input class="editable-text" id="edit-name" type="text" placeholder="사이트 이름을 입력하세요">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">개발자</div>
+          <div class="field-value">
+            <input class="editable-text" id="edit-dev" type="text" placeholder="개발자 이름">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">이용 목적</div>
+          <div class="field-value">
+            <textarea class="editable-text" id="edit-purpose" rows="2" placeholder="사이트 이용 목적을 입력하세요"></textarea>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">사이트 URL</div>
+          <div class="field-value" style="display:flex; align-items:center; gap:8px;">
+            <input class="editable-text" id="edit-url" type="url" placeholder="https://" style="flex:1;">
+            <a id="urlOpenBtn" href="#" target="_blank" style="color:var(--blue); font-size:16px; text-decoration:none;" title="새 탭에서 열기">🔗</a>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">버전</div>
+          <div class="field-value">
+            <input class="editable-text" id="edit-version" type="text" placeholder="v1.0">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">권한</div>
+          <div class="field-value">
+            <select class="editable-text" id="edit-perm" style="cursor:pointer;">
+              <option value="전체">전체 공개</option>
+              <option value="팀">팀 내부</option>
+              <option value="제한">제한</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- 업데이트 내용 -->
+      <div class="modal-section">
+        <div class="modal-section-title">📝 주요 업데이트 내용</div>
+        <textarea class="editable-text" id="edit-update" rows="3" placeholder="이번 버전의 주요 변경사항을 기재해주세요" style="width:100%;"></textarea>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- 팀원 의견 -->
+      <div class="modal-section">
+        <div class="modal-section-title">💬 팀원 의견 <span style="font-size:11px; font-weight:400; color:var(--text-muted);">— 수정/보완 사항을 자유롭게 남겨주세요</span></div>
+        <div class="opinion-hint">👤 이름을 비워두면 <strong>익명</strong>으로 등록됩니다</div>
+        <div class="opinion-add">
+          <input type="text" class="opinion-input" id="newOpinionInput" placeholder="의견을 입력하고 Enter 또는 추가 버튼을 누르세요" onkeydown="if(event.key==='Enter') addOpinion()">
+          <input type="text" class="opinion-name-input" id="opinionAuthor" placeholder="이름 (선택)" title="비워두면 익명으로 등록됩니다">
+          <button class="add-btn" onclick="addOpinion()">+ 추가</button>
+        </div>
+        <div class="opinion-list" id="opinionList">
+          <div class="empty-opinions">💡 아직 등록된 의견이 없어요. 첫 의견을 남겨보세요!</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-save" onclick="saveChanges()" id="saveBtn">
+        💾 저장하기
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================================================================
+// ⚙️  설정 — Power Automate Flow URL을 여기에 입력하세요
+// ===================================================================
+const CONFIG = {
+  // ✅ Read Flow URL
+  // 트리거: When HTTP request received (POST, Anyone)
+  // → Get file content using path (File Path에 triggerBody()?['file'] 사용)
+  // → Response (Body: body('Get_file_content_using_path'))
+  FLOW_READ_URL: '',
+
+  // ✅ Write Flow URL
+  FLOW_WRITE_URL: '',
+
+  // ✅ Flow File Path의 triggerBody()?['file'] 로 전달할 파일명
+  //    예시 File Path 설정: /Shared Documents/폴더명/@{triggerBody()?['file']}
+  FILE_NAME: 'devportal.json',
+
+  // 데모 모드: true → 샘플 데이터 / false → 실제 Flow 연결
+  DEMO_MODE: true,
+};
+
+// ===================================================================
+// 📦 STATE
+// ===================================================================
+let allData = [];      // 전체 사이트 데이터
+let currentIdx = null; // 현재 모달에서 편집 중인 인덱스
+let isCreating = false; // 신규 등록 모드 여부
+let createTempIdx = null; // 신규 등록 임시 인덱스
+let hasSavedCurrent = false; // 현재 모달 저장 완료 여부
+
+// ===================================================================
+// 🔐 사용자 정보 (Power Pages context)
+// ===================================================================
+function getCurrentUser() {
+  try {
+    // Power Pages에서 제공하는 사용자 컨텍스트 활용
+    if (typeof Microsoft !== 'undefined' && Microsoft.Dynamic365 &&
+        Microsoft.Dynamic365.Portal && Microsoft.Dynamic365.Portal.User) {
+      const u = Microsoft.Dynamic365.Portal.User;
+      return { name: u.fullname || u.username || '사용자', email: u.username || '' };
+    }
+    // Shell 방식
+    if (window._mscrm && window._mscrm.user) {
+      return { name: window._mscrm.user.fullname || '사용자', email: window._mscrm.user.username || '' };
+    }
+  } catch(e) {}
+  return { name: 'Guest', email: '' };
+}
+
+function initUserInfo() {
+  const user = getCurrentUser();
+  const initials = user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) || 'GU';
+  document.getElementById('userAvatar').textContent = initials;
+  document.getElementById('userName').textContent = user.name;
+}
+
+// ===================================================================
+// 📊 데이터 로드
+// ===================================================================
+async function loadData() {
+  showLoading();
+  try {
+    let data;
+    if (CONFIG.DEMO_MODE) {
+      data = getDemoData();
+    } else {
+      // POST body에 file 파라미터 전달 → Flow: triggerBody()?['file']
+      const res = await fetch(CONFIG.FLOW_READ_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: CONFIG.FILE_NAME })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      // Power Automate의 Get file content using path 응답 파싱
+      // 경우 1: Response Body를 body('Get_file_content_using_path') 그대로 설정한 경우
+      //         → Content-Type이 application/json이면 res.json(), 아니면 res.text()
+      // 경우 2: Power Automate가 바이너리를 { "$content-type": "...", "$content": "base64..." } 로 래핑하는 경우
+      const contentType = res.headers.get('content-type') || '';
+      let raw;
+      if (contentType.includes('application/json')) {
+        raw = await res.json();
+        // Power Automate 바이너리 래핑 처리: { "$content": "base64문자열" }
+        if (raw && raw['$content']) {
+          const decoded = atob(raw['$content']);
+          data = JSON.parse(decoded);
+        } else {
+          data = raw;
+        }
+      } else {
+        // text/plain, application/octet-stream 등 → 텍스트로 파싱
+        const text = await res.text();
+        data = JSON.parse(text);
+      }
+    }
+
+    // 배열 직접 or { sites: [...] } or { data: [...] } 형태 모두 처리
+    allData = Array.isArray(data) ? data : (data.sites || data.data || []);
+    // opinions 필드 없는 항목 초기화
+    allData = allData.map(s => ({
+      ...s,
+      opinions: Array.isArray(s.opinions) ? s.opinions : []
+    }));
+    renderTable(allData);
+    renderCompleted();
+    updateStats();
+    updateFilters();
+  } catch(e) {
+    showError(`데이터 로드 실패: ${e.message}. Flow URL·파일명 설정을 확인하거나 데모 모드를 켜주세요.`);
+    console.error(e);
+  }
+}
+
+// ===================================================================
+// 🎨 테이블 렌더링
+// ===================================================================
+function renderTable(data) {
+  const tbody = document.getElementById('tableBody');
+  document.getElementById('badge-sites').textContent = data.length;
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="10">
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-title">검색 결과가 없어요</div>
+        <div class="empty-sub">검색어나 필터를 변경해 보세요.</div>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map((site, vi) => {
+    // 실제 allData 인덱스 찾기
+    const realIdx = allData.indexOf(site);
+    const pendingCount = site.opinions.filter(o => !o.done).length;
+    const doneCount = site.opinions.filter(o => o.done).length;
+    const devInitials = (site.dev||'?').split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const permClass = (site.perm||'').includes('전체') ? 'perm-all' : (site.perm||'').includes('제한') ? 'perm-restricted' : 'perm-team';
+
+    return `<tr>
+      <td style="color:var(--text-muted); font-size:12px; font-weight:600;">${vi+1}</td>
+      <td>
+        <div class="site-name">
+          🌐 ${escHtml(site.name||'-')}
+        </div>
+      </td>
+      <td>
+        <div class="dev-chip">
+          <div class="dev-dot">${devInitials}</div>
+          ${escHtml(site.dev||'-')}
+        </div>
+      </td>
+      <td>
+        <div class="purpose-cell truncate" title="${escHtml(site.purpose||'')}">
+          ${escHtml(site.purpose||'-')}
+        </div>
+      </td>
+      <td>
+        ${site.url ? `<a class="url-link" href="${escHtml(site.url)}" target="_blank">🔗 열기 ↗</a>` : '<span style="color:var(--text-muted)">-</span>'}
+      </td>
+      <td>
+        <span class="version-badge">${escHtml(site.version||'-')}</span>
+      </td>
+      <td>
+        <div class="truncate" style="max-width:160px; font-size:13px; color:var(--text-secondary);" title="${escHtml(site.update||'')}">
+          ${escHtml(site.update||'-')}
+        </div>
+      </td>
+      <td>
+        <span class="perm-badge ${permClass}">${escHtml(site.perm||'-')}</span>
+      </td>
+      <td style="padding-right:6px;">
+        <div style="display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end;">
+          ${pendingCount > 0 ? `<span class="opinion-count">💬 ${pendingCount}건</span>` : ''}
+          ${doneCount > 0 ? `<span class="opinion-count done">✅ ${doneCount}건</span>` : ''}
+          ${pendingCount === 0 && doneCount === 0 ? '<span style="color:var(--text-muted); font-size:12px;">-</span>' : ''}
+        </div>
+      </td>
+      <td style="padding-left:6px;">
+        <button class="action-btn" onclick="openModal(${realIdx})">📂 상세보기</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ===================================================================
+// ✅ 완료 탭 렌더링
+// ===================================================================
+function renderCompleted() {
+  const container = document.getElementById('completedList');
+  const allDone = allData.flatMap(site =>
+    site.opinions.filter(o => o.done).map(o => ({ ...o, siteName: site.name }))
+  );
+  const doneCount = allDone.length;
+  document.getElementById('badge-done').textContent = doneCount;
+
+  // 사이트별로 그룹핑
+  const bySite = {};
+  allData.forEach(site => {
+    const done = site.opinions.filter(o => o.done);
+    if (done.length) bySite[site.name] = done;
+  });
+
+  if (!Object.keys(bySite).length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">✨</div>
+      <div class="empty-title">완료된 의견이 없어요</div>
+      <div class="empty-sub">팀원 의견에 체크박스를 클릭하면 여기로 이동합니다!</div>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = Object.entries(bySite).map(([name, items]) => `
+    <div class="completed-card">
+      <div class="completed-card-header">
+        <span style="font-size:18px;">✅</span>
+        <span class="completed-site-name">🌐 ${escHtml(name)}</span>
+        <span class="opinion-count done" style="margin-left:auto;">${items.length}건 완료</span>
+      </div>
+      <div class="completed-items">
+        ${items.map(o => `
+          <div class="completed-item">
+            <span class="completed-check">✔</span>
+            <span class="completed-text">${escHtml(o.text)}</span>
+            <span style="font-size:11px; color:var(--text-muted);">${escHtml(o.addedBy||'')} ${escHtml(o.addedAt||'')}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===================================================================
+// 📈 통계 업데이트
+// ===================================================================
+function updateStats() {
+  const totalOpinions = allData.flatMap(s=>s.opinions);
+  const pending = totalOpinions.filter(o=>!o.done).length;
+  const done = totalOpinions.filter(o=>o.done).length;
+  const devs = new Set(allData.map(s=>s.dev).filter(Boolean)).size;
+
+  document.getElementById('stat-total').textContent = allData.length;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-devs').textContent = devs;
+}
+
+// ===================================================================
+// 🔎 필터
+// ===================================================================
+function updateFilters() {
+  const devSel = document.getElementById('devFilter');
+  const devs = [...new Set(allData.map(s=>s.dev).filter(Boolean))];
+  devSel.innerHTML = '<option value="">👤 개발자 전체</option>' +
+    devs.map(d=>`<option value="${escHtml(d)}">${escHtml(d)}</option>`).join('');
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const dev = document.getElementById('devFilter').value;
+  const perm = document.getElementById('permFilter').value;
+
+  const filtered = allData.filter(s => {
+    const matchQ = !q || [s.name,s.dev,s.purpose,s.update].some(f=>(f||'').toLowerCase().includes(q));
+    const matchDev = !dev || s.dev === dev;
+    const matchPerm = !perm || (s.perm||'').includes(perm);
+    return matchQ && matchDev && matchPerm;
+  });
+  renderTable(filtered);
+}
+
+// ===================================================================
+// ➕ 신규 사이트 등록
+// ===================================================================
+function openNewModal() {
+ // 아직 데이터가 로드되지 않았더라도 빈 배열에서 시작 가능
+ if (!Array.isArray(allData)) allData = [];
+ const newSite = {
+  name: '',
+  dev: '',
+  purpose: '',
+  url: '',
+  version: '',
+  update: '',
+  perm: '전체',
+  opinions: []
+ };
+ const idx = allData.length;
+ allData.push(newSite);
+ // 신규 등록은 상세보기와 동일 UI(모달)로 열되, 제목만 다르게 표시
+ openModal(idx, true);
+}
+
+// ===================================================================
+// 🪟 모달
+// ===================================================================
+function openModal(idx, isNew = false) {
+  currentIdx = idx;
+  hasSavedCurrent = false;
+  isCreating = !!isNew;
+  createTempIdx = isCreating ? idx : null;
+
+  const site = allData[idx] || {};
+  document.getElementById('modalTitle').textContent = isNew ? '➕ 신규 사이트 등록' : `📂 ${site.name || '사이트 상세'}`;
+  document.getElementById('edit-name').value = site.name || '';
+  document.getElementById('edit-dev').value = site.dev || '';
+  document.getElementById('edit-purpose').value = site.purpose || '';
+  document.getElementById('edit-url').value = site.url || '';
+  document.getElementById('edit-version').value = site.version || '';
+  document.getElementById('edit-update').value = site.update || '';
+  document.getElementById('edit-perm').value = site.perm || '전체';
+
+  const urlBtn = document.getElementById('urlOpenBtn');
+  const urlVal = (site.url || '').trim();
+  urlBtn.href = urlVal ? urlVal : '#';
+  urlBtn.style.opacity = urlVal ? '1' : '0.35';
+  urlBtn.style.pointerEvents = urlVal ? 'auto' : 'none';
+
+  renderOpinions(site.opinions || []);
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  // 신규 등록 중 저장 없이 닫으면 임시 데이터 제거
+  if (isCreating && !hasSavedCurrent && createTempIdx !== null) {
+    allData.splice(createTempIdx, 1);
+  }
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  currentIdx = null;
+  isCreating = false;
+  createTempIdx = null;
+  hasSavedCurrent = false;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+// ===================================================================
+// 💬 의견 (To-Do) 렌더링
+// ===================================================================
+function renderOpinions(opinions) {
+  const container = document.getElementById('opinionList');
+  const pending = opinions.filter(o=>!o.done);
+  const done = opinions.filter(o=>o.done);
+  const display = [...pending, ...done]; // 미완료 먼저
+
+  if (!display.length) {
+    container.innerHTML = '<div class="empty-opinions">💡 아직 등록된 의견이 없어요. 첫 의견을 남겨보세요!</div>';
+    return;
+  }
+
+  container.innerHTML = display.map((op, i) => {
+    const realIdx = opinions.indexOf(op);
+    return `<div class="opinion-item" id="opItem-${realIdx}">
+      <input type="checkbox" class="opinion-cb" ${op.done?'checked':''} onchange="toggleOpinion(${realIdx})">
+      <span class="opinion-text ${op.done?'done':''}" id="opText-${realIdx}">${escHtml(op.text)}</span>
+      <span class="opinion-meta">${escHtml(op.addedBy||'익명')} · ${escHtml(op.addedAt||'')}</span>
+      <button class="opinion-delete" onclick="deleteOpinion(${realIdx})" title="삭제">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function addOpinion() {
+  if (currentIdx === null) return;
+  const input = document.getElementById('newOpinionInput');
+  const authorInput = document.getElementById('opinionAuthor');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const authorRaw = (authorInput.value || '').trim();
+  const author = authorRaw || '익명';
+  const now = new Date();
+  const dateStr = `${now.getMonth()+1}/${now.getDate()}`;
+
+  allData[currentIdx].opinions.push({
+    text,
+    done: false,
+    addedBy: author,
+    addedAt: dateStr,
+    id: Date.now().toString()
+  });
+
+  input.value = '';
+  // 이름 필드는 유지 (연속 입력 편의)
+  renderOpinions(allData[currentIdx].opinions);
+  showToast('💬 의견이 추가되었어요!', 'success');
+}
+
+function toggleOpinion(opIdx) {
+  if (currentIdx === null) return;
+  const op = allData[currentIdx].opinions[opIdx];
+  op.done = !op.done;
+  renderOpinions(allData[currentIdx].opinions);
+}
+
+function deleteOpinion(opIdx) {
+  if (currentIdx === null) return;
+  if (!confirm('이 의견을 삭제할까요?')) return;
+  allData[currentIdx].opinions.splice(opIdx, 1);
+  renderOpinions(allData[currentIdx].opinions);
+}
+
+// ===================================================================
+// ✅ 입력값 검증
+// ===================================================================
+function normalizeUrl(u) {
+ const v = (u || '').trim();
+ if (!v) return '';
+ // 프로토콜 없으면 https:// 자동 보정
+ if (!/^https?:\/\//i.test(v)) return 'https://' + v;
+ return v;
+}
+function isValidUrl(u) {
+ try {
+  new URL(u);
+  return true;
+ } catch (e) {
+  return false;
+ }
+}
+function validateSiteInput(site) {
+ const name = (site.name || '').trim();
+ if (!name) return '사이트 명칭을 입력해주세요.';
+ if (name.length > 100) return '사이트 명칭은 100자 이내로 입력해주세요.';
+ if ((site.dev || '').length > 60) return '개발자 이름은 60자 이내로 입력해주세요.';
+ if ((site.url || '').length > 300) return 'URL이 너무 깁니다.';
+ const url = (site.url || '').trim();
+ if (url) {
+  const norm = normalizeUrl(url);
+  if (!isValidUrl(norm)) return 'URL 형식이 올바르지 않습니다.';
+ }
+ return '';
+}
+
+// ===================================================================
+// 💾 저장
+// ===================================================================
+async function saveChanges() {
+  if (currentIdx === null) return;
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = '⏳ 저장 중...';
+  btn.disabled = true;
+
+  // ✅ 신규 등록 여부를 저장 전에 캡처 (closeModal()에서 isCreating이 초기화됨)
+  const wasCreating = isCreating === true;
+
+  // 모달 입력값 → 데이터 반영
+  allData[currentIdx] = {
+    ...allData[currentIdx],
+    name: document.getElementById('edit-name').value.trim(),
+    dev: document.getElementById('edit-dev').value.trim(),
+    purpose: document.getElementById('edit-purpose').value.trim(),
+    url: document.getElementById('edit-url').value.trim(),
+    version: document.getElementById('edit-version').value.trim(),
+    update: document.getElementById('edit-update').value.trim(),
+    perm: document.getElementById('edit-perm').value,
+    opinions: allData[currentIdx].opinions
+  };
+
+  try {
+    if (!CONFIG.DEMO_MODE) {
+      const res = await fetch(CONFIG.FLOW_WRITE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'write', data: allData })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    }
+
+    // ✅ 저장 성공 플래그(신규 등록 모달을 닫을 때 임시 데이터 삭제 방지)
+    hasSavedCurrent = true;
+
+    closeModal();
+
+    // ✅ 신규 사이트 등록 완료 시: 목록을 즉시 재조회(loadData)하여 화면을 새로고침
+    //    (Flow/SharePoint에 저장된 최종 데이터 기준으로 동기화)
+    if (wasCreating) {
+      await loadData();
+    } else {
+      renderTable(allData);
+      renderCompleted();
+      updateStats();
+      updateFilters();
+    }
+
+    showToast('✅ 저장되었습니다!', 'success');
+  } catch(e) {
+    showToast(`❌ 저장 실패: ${e.message}`, 'error');
+    console.error(e);
+  } finally {
+    btn.textContent = '💾 저장하기';
+    btn.disabled = false;
+  }
+}
+
+// ===================================================================
+// 🔀 탭 전환
+// ===================================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['sites','completed'][i] === tab);
+  });
+  document.getElementById('tab-sites').style.display = tab === 'sites' ? 'block' : 'none';
+  document.getElementById('tab-completed').style.display = tab === 'completed' ? 'block' : 'none';
+  if (tab === 'completed') renderCompleted();
+}
+
+// ===================================================================
+// 🎉 유틸
+// ===================================================================
+function showLoading() {
+  document.getElementById('tableBody').innerHTML =
+    '<tr class="loading-row"><td colspan="10"><span class="spinner"></span> 데이터를 불러오는 중입니다...</td></tr>';
+}
+
+function showError(msg) {
+  document.getElementById('tableBody').innerHTML =
+    `<tr><td colspan="10"><div class="empty-state">
+      <div class="empty-icon">⚠️</div>
+      <div class="empty-title">데이터 로드 오류</div>
+      <div class="empty-sub">${escHtml(msg)}</div>
+    </div></td></tr>`;
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===================================================================
+// 🧪 데모 데이터
+// ===================================================================
+function getDemoData() {
+  return [
+    {
+      name: '근태 관리 대시보드',
+      dev: '김민준',
+      purpose: '팀원 출퇴근 현황 및 초과 근무 자동 집계',
+      url: 'https://your-tenant.powerapps.com/apps/attendance',
+      version: 'v2.1',
+      update: '주간 리포트 자동 메일 발송 기능 추가, UI 개선',
+      perm: '팀',
+      opinions: [
+        { text: '모바일에서 날짜 선택기가 잘 안 눌려요 🙏', done: false, addedBy: '익명', addedAt: '4/10', id: '1' },
+        { text: '야간 근무 수당 자동 계산 기능 추가 부탁드려요!', done: true, addedBy: '박지호', addedAt: '4/8', id: '2' },
+        { text: '엑셀로 다운로드 기능 있으면 좋겠어요', done: false, addedBy: '익명', addedAt: '4/12', id: '3' },
+      ]
+    },
+    {
+      name: '구매 요청 자동화',
+      dev: '이서연',
+      purpose: 'Power Automate 기반 물품 구매 결재 Flow 자동화',
+      url: 'https://your-tenant.powerapps.com/apps/purchase',
+      version: 'v1.3',
+      update: '결재라인 다중 승인자 지원 추가',
+      perm: '전체',
+      opinions: [
+        { text: '결재 상태 알림 카카오톡으로 보내주실 수 있나요?', done: false, addedBy: '한도현', addedAt: '4/11', id: '4' },
+      ]
+    },
+    {
+      name: '설비 점검 체크리스트',
+      dev: '박지호',
+      purpose: '현장 설비 정기 점검 디지털화 및 이력 관리',
+      url: 'https://your-tenant.powerapps.com/apps/equipment',
+      version: 'v1.0',
+      update: '초기 배포 — 기본 점검 항목 및 사진 첨부 기능',
+      perm: '제한',
+      opinions: []
+    },
+    {
+      name: '고객 VOC 분류 툴',
+      dev: '최유진',
+      purpose: 'AI 기반 고객 의견 자동 분류 및 우선순위 정렬',
+      url: 'https://your-tenant.powerpages.microsoft.com/voc',
+      version: 'v3.0',
+      update: 'GPT 분류 모델 연동, 대시보드 실시간 반영',
+      perm: '팀',
+      opinions: [
+        { text: '부정 리뷰 비율 그래프 추가해주세요 📊', done: false, addedBy: '김민준', addedAt: '4/13', id: '5' },
+        { text: '특정 키워드 알림 기능 구현됐으면 해요', done: true, addedBy: '이서연', addedAt: '4/9', id: '6' },
+      ]
+    },
+    {
+      name: '재고 현황 뷰어',
+      dev: '한도현',
+      purpose: 'SharePoint 기반 창고 재고 실시간 현황 조회',
+      url: 'https://your-tenant.powerpages.microsoft.com/inventory',
+      version: 'v1.5',
+      update: '바코드 스캔 입력 지원, 필터 개선',
+      perm: '전체',
+      opinions: [
+        { text: '재고 부족 항목 빨간색으로 강조해주세요!', done: false, addedBy: '박지호', addedAt: '4/14', id: '7' },
+      ]
+    }
+  ];
+}
+
+// ===================================================================
+// 🚀 초기화
+// ===================================================================
+document.addEventListener('DOMContentLoaded', function() {
+  loadData();
+});
+
+// ESC 키로 모달 닫기
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>

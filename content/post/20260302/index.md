@@ -1,6 +1,6 @@
 ---
 created: 2026-02-24 21:23
-updated: 2026-03-18 21:51
+updated: 2026-04-20 05:19
 title: 스스로의 마음을 다스리기 위해 쓰기 시작한 기억노트
 description: 나의 감정 혹은 기분을 기록하면 한결 좋을 것 같다는 막연한 생각에서 시작한다.
 slug: record-feelings-mental-health

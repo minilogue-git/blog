@@ -8,7 +8,7 @@ categories: [Work]
 tags: [AI, 보안, 학습]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-03-18 21:51
+updated: 2026-04-20 05:19
 ---
 
 요즘 출근하기만 하면 C레벨이건 팀장이건 모두 AI, AI를 입에 달고 산다.<br>
