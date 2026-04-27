@@ -8,7 +8,7 @@ categories: [Project]
 tags: [AI, Power_Pages, 개발자, 포탈, Developer]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-04-20 06:02
+updated: 2026-04-23 05:53
 ---
 
 # Power Pages를 호스팅처럼 이용하게 되면 겪는 일
