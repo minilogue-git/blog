@@ -1,7 +1,7 @@
 ---
 title: 아이와 함께 하기 좋은 곤지암 리조트
 description: 어린 아이와 사계절 놀기 좋은 리조트다. 꼭 숙박하지 않아도 좋다.
-slug: index
+slug: best-kids-friendly-konjiam-resort
 date: 2026-04-23T05:53:34+09:00
 image: 20260427055938.png
 categories:
@@ -11,6 +11,7 @@ tags:
   - 생태하천
   - 화담숲
   - 오락실
+  - 사계절
 weight: 0
 created: 2026-02-24 21:23
 updated: 2026-04-27 05:53
