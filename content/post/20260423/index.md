@@ -4,17 +4,11 @@ description: 어린 아이와 사계절 놀기 좋은 리조트다. 꼭 숙박�
 slug: best-kids-friendly-konjiam-resort
 date: 2026-04-23T05:53:34+09:00
 image: 20260427055938.png
-categories:
-  - Travel
-tags:
-  - 곤지암리조트
-  - 생태하천
-  - 화담숲
-  - 오락실
-  - 사계절
+categories: [Travel]
+tags: [곤지암리조트, 생태하천, 화담숲, 오락실, 사계절]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-04-27 05:53
+updated: 2026-04-28 06:13
 ---
 
 # 곤지암 리조트를 찾게 된 이유
