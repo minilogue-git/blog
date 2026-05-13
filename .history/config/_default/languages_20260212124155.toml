@@ -3,6 +3,5 @@
     languageName      = "한국어"
     languageCode      = "ko-kr"
     languagedirection = "ltr"
-    locale            = "ko"    
     title             = "JU HEON's Blog" # 여기에 블로그 제목을 적으세요
     weight            = 1
