@@ -8,7 +8,7 @@ categories: [Project]
 tags: [AI, 프로젝트, 마스터플랜, 현황관리]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-04-01 06:06
+updated: 2026-05-13 09:44
 ---
 
 # 마스터플랜(Progress Tracker)

@@ -8,7 +8,7 @@ categories: [Work]
 tags: [AI, Workshop, 워크숍, Gemini, Claude, Perplexity, Copilot]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-04-20 05:09
+updated: 2026-05-13 09:29
 ---
 
 # Workshop 좀 준비해봐

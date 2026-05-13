@@ -4,17 +4,11 @@ description: AI Workshop인데, 포스트잇으로는 할 수 없어 과제 설�
 slug: ai-workshop-design-canvas
 date: 2026-04-28T06:13:39+09:00
 image: 20260428061710.png
-categories:
-  - Project
-tags:
-  - AI
-  - 과제
-  - 설계
-  - 캔버스
-  - Canvas
+categories: [Project]
+tags: [AI, 과제, 설계, 캔버스, Canvas]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-04-29 05:34
+updated: 2026-05-13 09:30
 ---
 
 # AI Workshop 진행을 포스트잇으로 할 수는 없다.
