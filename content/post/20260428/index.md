@@ -8,7 +8,7 @@ categories: [Project]
 tags: [AI, 과제, 설계, 캔버스, Canvas]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-05-13 09:30
+updated: 2026-05-14 06:36
 ---
 
 # AI Workshop 진행을 포스트잇으로 할 수는 없다.

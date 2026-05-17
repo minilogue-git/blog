@@ -8,7 +8,7 @@ categories: [Life]
 tags: [K810, 키보드, Fn키]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-05-13 09:40
+updated: 2026-05-14 05:28
 ---
 
 # 오래된 노트북을 꺼냈다.
