@@ -18,7 +18,7 @@ tags:
   - GitHub
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-05-18 06:26
+updated: 2026-05-19 06:28
 ---
 
 # 읽어야 될 글들이 너무 많아졌다.
@@ -191,6 +191,15 @@ export async function POST(req: NextRequest) {
         // 불필요 불순물 태그 제거
         ['script', 'style', 'iframe', 'noscript', 'footer', 'nav'].forEach(s => {
           document.querySelectorAll(s).forEach(el => el.remove());
+        });
+
+        // [추가] 이미지 감싸기용 빈 링크(#) 또는 이미지 링크 태그 제거 로직
+        // 링크 내부의 내용(이미지)은 유지하되, 겉의 <a> 태그 껍데기만 벗겨내는 디테일입니다.
+        document.querySelectorAll('a').forEach(a => {
+          const href = a.getAttribute('href');
+          if (!href || href === '#' || a.querySelector('img')) {
+            a.replaceWith(...Array.from(a.childNodes));
+          }
         });
 
         const reader = new Readability(document);
