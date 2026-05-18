@@ -1,13 +1,35 @@
 public
 resources
 .hugo_build.lock
-.DS_Store
 assets/jsconfig.json
+
+# 의존성 전용 폴더 (이미 등록하신 것)
+node_modules/
+
+# Next.js 빌드 결과물 (절대 올라가면 안 됨)
+.next/
+out/
+
+# OS 자동 생성 파일 (맥/윈도우 찌꺼기)
+.DS_Store
+Thumbs.db
+
+# VS Code 임시 기록 및 히스토리 폴더
+.history/
+.vscode/
+
+# 환경변수 파일 (보안상 절대 금지!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # 옵시디언 자체 설정 (볼트마다 생기는 폴더)
 .obsidian/
 .trash/
 Tags
+
 # 옵시디언 플러그인
 .makemd/
 .space/
