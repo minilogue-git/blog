@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사번 해시 생성기 — 관리자 도구</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --navy:#203B8A;--blue:#3A80F4;--bg:#F6F8FA;--mid:#EEF2F6;
+  --white:#fff;--border:#D8E2EE;--text:#1A202C;--sub:#4A5568;--mute:#8A9BB0;
+  --red:#E53E3E;--green:#38A169;
+  --shadow:0 4px 16px rgba(32,59,138,.12);--radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:40px 20px;}
+h1{font-size:1.4rem;font-weight:700;color:var(--navy);margin-bottom:6px}
+.sub{font-size:.85rem;color:var(--sub);margin-bottom:28px;line-height:1.6}
+.card{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);padding:24px;box-shadow:var(--shadow);max-width:700px;margin:0 auto 24px}
+.card h2{font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.row{display:flex;gap:12px;margin-bottom:14px;align-items:flex-end;flex-wrap:wrap}
+label{display:block;font-size:.78rem;font-weight:600;color:var(--sub);margin-bottom:4px}
+input,select{padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);font-size:.88rem;outline:none;font-family:inherit;transition:.2s}
+input:focus,select:focus{border-color:var(--blue);background:var(--white)}
+input[readonly]{background:var(--mid);color:var(--sub);cursor:default}
+.inp-sm{width:160px}
+.inp-md{width:220px}
+.inp-lg{flex:1;min-width:200px}
+.inp-full{width:100%}
+.btn{padding:9px 18px;border-radius:8px;font-size:.85rem;font-weight:700;border:none;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--navy);color:#fff}.btn-primary:hover{background:#162d6b}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#2f855a}
+.btn-sm{padding:6px 12px;font-size:.78rem;border-radius:6px}
+.btn-outline{background:transparent;color:var(--navy);border:1.5px solid var(--navy)}.btn-outline:hover{background:var(--mid)}
+.hash-result{
+  font-family:'Courier New',monospace;font-size:.78rem;padding:10px 12px;
+  background:#1a1e2e;color:#c9d1d9;border-radius:8px;word-break:break-all;
+  line-height:1.6;position:relative;min-height:44px;
+}
+.copy-btn{position:absolute;top:6px;right:6px;padding:3px 8px;border-radius:5px;font-size:.72rem;font-weight:600;background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.15);cursor:pointer}
+.copy-btn:hover{background:rgba(255,255,255,.22)}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:.72rem;font-weight:600}
+.badge-ok{background:#d1fae5;color:#065f46}
+.badge-warn{background:#fff3cd;color:#856404}
+.user-table{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:8px}
+.user-table th{background:var(--mid);padding:8px 10px;text-align:left;font-weight:600;color:var(--sub);border-bottom:1px solid var(--border)}
+.user-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.user-table tr:last-child td{border-bottom:none}
+.user-table tr:hover td{background:var(--bg)}
+.hash-cell{font-family:'Courier New',monospace;font-size:.72rem;color:var(--mute);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.json-output{
+  font-family:'Courier New',monospace;font-size:.78rem;
+  background:#1a1e2e;color:#c9d1d9;border-radius:8px;
+  padding:16px;white-space:pre;overflow-x:auto;line-height:1.6;
+  position:relative;max-height:400px;overflow-y:auto;
+}
+.info-box{background:var(--mid);border-radius:8px;padding:14px 16px;font-size:.82rem;color:var(--sub);line-height:1.7;margin-bottom:16px}
+.info-box strong{color:var(--navy)}
+.divider{height:1px;background:var(--border);margin:18px 0}
+.flex-end{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
+.rank-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.rank-chip{padding:4px 10px;border-radius:16px;font-size:.78rem;border:1.5px solid var(--border);cursor:pointer;transition:.2s;background:var(--white);color:var(--sub)}
+.rank-chip:hover,.rank-chip.selected{background:var(--navy);color:#fff;border-color:var(--navy)}
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none}
+.toast-item{padding:9px 16px;border-radius:9px;font-size:.83rem;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.12);animation:tIn .2s ease;display:flex;align-items:center;gap:7px}
+.toast-item.success{background:#f0fff4;color:#276749;border:1px solid #9ae6b4}
+.toast-item.error{background:#fff5f5;color:#9b2c2c;border:1px solid #feb2b2}
+.toast-item.info{background:#ebf4ff;color:#2b6cb0;border:1px solid #90cdf4}
+@keyframes tIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.step-num{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:.72rem;font-weight:700;align-items:center;justify-content:center;flex-shrink:0;margin-right:6px}
+</style>
+</head>
+<body>
+<div style="max-width:700px;margin:0 auto">
+  <h1>🔐 사번 해시 생성기</h1>
+  <p class="sub">
+    Power Automate에서 SHA-256 해싱이 불가능하므로, 관리자가 이 도구로 사번의 해시값을 미리 생성하여<br>
+    <code>auth.json</code>에 저장합니다. Flow는 해시값 비교만 수행합니다.<br>
+    <strong style="color:var(--red)">이 페이지는 사내 PC에서만 사용하고, 외부에 공유하지 마세요.</strong>
+  </p>
+
+  <!-- STEP 1: Salt 설정 -->
+  <div class="card">
+    <h2><span class="step-num">1</span> Salt 설정</h2>
+    <div class="info-box">
+      <strong>Salt란?</strong> 동일한 사번이라도 Salt에 따라 완전히 다른 해시값이 생성됩니다.<br>
+      Salt는 조직 전체에서 하나의 고정 값을 사용하며, <strong>한 번 설정하면 절대 변경하지 마세요.</strong><br>
+      (변경 시 모든 사용자의 해시를 재생성해야 합니다)
+    </div>
+    <div class="row">
+      <div class="inp-lg">
+        <label>Salt 값 (영문·숫자·특수문자, 최소 8자 이상 권장)</label>
+        <input type="text" id="saltInput" placeholder="예: MyCompany@2025!Lib" class="inp-full" value="">
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="generateSalt()">🎲 랜덤 생성</button>
+    </div>
+    <div style="font-size:.75rem;color:var(--mute);margin-top:-6px">
+      ⚠️ 이 Salt 값을 별도로 안전한 곳에 기록해 두세요. Flow 설정 시에도 동일한 값이 필요합니다.
+    </div>
+  </div>
+
+  <!-- STEP 2: 단일 해시 테스트 -->
+  <div class="card">
+    <h2><span class="step-num">2</span> 단일 사번 해시 생성 (테스트)</h2>
+    <div class="row">
+      <div>
+        <label>사번</label>
+        <input type="text" id="singleEmpNo" placeholder="예: 20250001" class="inp-md">
+      </div>
+      <button class="btn btn-primary" onclick="hashSingle()">해시 생성</button>
+    </div>
+    <label style="margin-bottom:6px;display:block">SHA-256(Salt + 사번) 결과</label>
+    <div class="hash-result" id="singleHashResult">
+      —
+      <button class="copy-btn" onclick="copyText('singleHashResult')">복사</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: 사용자 일괄 등록 -->
+  <div class="card">
+    <h2><span class="step-num">3</span> 사용자 등록 및 auth.json 생성</h2>
+
+    <!-- 사용자 추가 폼 -->
+    <div style="background:var(--bg);border-radius:8px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+      <div class="row" style="margin-bottom:10px">
+        <div>
+          <label>사번<span style="color:var(--red)">*</span></label>
+          <input type="text" id="newEmpNo" placeholder="예: 20250001" class="inp-sm">
+        </div>
+        <div>
+          <label>성명<span style="color:var(--red)">*</span></label>
+          <input type="text" id="newName" placeholder="예: 홍길동" class="inp-sm">
+        </div>
+        <div style="flex:1">
+          <label>직위</label>
+          <input type="text" id="newRank" placeholder="예: 책임" class="inp-md">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding-bottom:2px">
+          <label style="margin:0;display:flex;align-items:center;gap:5px;cursor:pointer">
+            <input type="checkbox" id="newIsAdmin" style="width:15px;height:15px">
+            <span style="font-size:.82rem;font-weight:600;color:var(--sub)">관리자</span>
+          </label>
+        </div>
+      </div>
+      <div style="margin-bottom:8px">
+        <label>직위 빠른 선택</label>
+        <div class="rank-chips" id="rankChips">
+          <span class="rank-chip" onclick="selectRank(this,'사원')">사원</span>
+          <span class="rank-chip" onclick="selectRank(this,'주임')">주임</span>
+          <span class="rank-chip" onclick="selectRank(this,'선임')">선임</span>
+          <span class="rank-chip" onclick="selectRank(this,'책임')">책임</span>
+          <span class="rank-chip" onclick="selectRank(this,'수석')">수석</span>
+          <span class="rank-chip" onclick="selectRank(this,'팀장')">팀장</span>
+          <span class="rank-chip" onclick="selectRank(this,'부장')">부장</span>
+          <span class="rank-chip" onclick="selectRank(this,'관리자')">관리자</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addUser()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        사용자 추가
+      </button>
+    </div>
+
+    <!-- 등록된 사용자 목록 -->
+    <div id="userTableWrap" style="display:none">
+      <table class="user-table" id="userTable">
+        <thead>
+          <tr>
+            <th>사번</th>
+            <th>성명</th>
+            <th>직위</th>
+            <th>관리자</th>
+            <th>해시 (미리보기)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+      <div class="divider"></div>
+      <div class="flex-end">
+        <button class="btn btn-outline btn-sm" onclick="clearUsers()">초기화</button>
+        <button class="btn btn-green" onclick="generateAuthJson()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          auth.json 생성
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: 생성된 auth.json -->
+  <div class="card" id="authJsonCard" style="display:none">
+    <h2><span class="step-num">4</span> 생성된 auth.json</h2>
+    <div class="info-box">
+      아래 JSON을 복사하여 <strong>SharePoint → Library 폴더 → auth.json</strong>에 저장하세요.<br>
+      파일이 이미 있으면 덮어쓰기합니다.
+    </div>
+    <div class="json-output" id="authJsonOutput" style="position:relative">
+      <button class="copy-btn" onclick="copyAuthJson()">전체 복사</button>
+      <span id="authJsonText">–</span>
+    </div>
+    <div class="flex-end" style="margin-top:12px">
+      <button class="btn btn-primary" onclick="downloadAuthJson()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        auth.json 다운로드
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 5: 사번 검증 테스트 -->
+  <div class="card">
+    <h2><span class="step-num">5</span> 사번 검증 테스트</h2>
+    <div class="info-box">
+      auth.json 생성 후, 실제로 사번을 입력하면 어떤 해시값이 나오는지 확인합니다.<br>
+      Flow의 비교 로직을 시뮬레이션합니다.
+    </div>
+    <div class="row">
+      <div>
+        <label>입력 사번</label>
+        <input type="text" id="verifyEmpNo" placeholder="사번 입력" class="inp-md">
+      </div>
+      <button class="btn btn-primary" onclick="verifyEmpNo()">검증</button>
+    </div>
+    <div id="verifyResult" style="margin-top:12px;display:none">
+      <div class="hash-result" id="verifyHashDisplay" style="margin-bottom:10px"></div>
+      <div id="verifyMatchResult"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ── 전역 상태 ── */
+let users = [];
+let lastAuthJson = null;
+
+/* ── SHA-256 (Web Crypto API — 브라우저 기본 내장) ── */
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray  = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+/* 해시 생성: SHA-256(salt + empNo) */
+async function makeHash(empNo) {
+  const salt = document.getElementById('saltInput').value.trim();
+  if (!salt) { showToast('Salt 값을 먼저 입력하세요.','error'); return null; }
+  return await sha256(salt + empNo);
+}
+
+/* ── Salt 랜덤 생성 ── */
+function generateSalt() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let salt = '';
+  const arr = new Uint8Array(24);
+  crypto.getRandomValues(arr);
+  arr.forEach(b => { salt += chars[b % chars.length]; });
+  document.getElementById('saltInput').value = salt;
+  showToast('랜덤 Salt가 생성되었습니다. 반드시 별도로 기록해 두세요.','info', 5000);
+}
+
+/* ── 단일 해시 생성 ── */
+async function hashSingle() {
+  const empNo = document.getElementById('singleEmpNo').value.trim();
+  if (!empNo) { showToast('사번을 입력하세요.','error'); return; }
+  const hash = await makeHash(empNo);
+  if (!hash) return;
+  document.getElementById('singleHashResult').childNodes[0].textContent = hash;
+  showToast('해시가 생성되었습니다.','success');
+}
+
+/* ── 직위 빠른 선택 ── */
+function selectRank(el, rank) {
+  document.querySelectorAll('.rank-chip').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('newRank').value = rank;
+}
+
+/* ── 사용자 추가 ── */
+async function addUser() {
+  const empNo   = document.getElementById('newEmpNo').value.trim();
+  const name    = document.getElementById('newName').value.trim();
+  const rank    = document.getElementById('newRank').value.trim();
+  const isAdmin = document.getElementById('newIsAdmin').checked;
+  if (!empNo) { showToast('사번을 입력하세요.','error'); return; }
+  if (!name)  { showToast('성명을 입력하세요.','error'); return; }
+  if (users.find(u=>u.empNo===empNo)) { showToast('이미 등록된 사번입니다.','error'); return; }
+
+  const hash = await makeHash(empNo);
+  if (!hash) return;
+
+  users.push({ empNo, name, rank: rank||'', isAdmin, hash });
+  clearInputs();
+  renderUserTable();
+  showToast(`${name} ${rank} 추가 완료.`,'success');
+}
+
+function clearInputs() {
+  ['newEmpNo','newName','newRank'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('newIsAdmin').checked=false;
+  document.querySelectorAll('.rank-chip').forEach(c=>c.classList.remove('selected'));
+}
+
+/* ── 사용자 테이블 렌더링 ── */
+function renderUserTable() {
+  const wrap = document.getElementById('userTableWrap');
+  const tbody = document.getElementById('userTableBody');
+  wrap.style.display = users.length ? 'block' : 'none';
+  tbody.innerHTML = '';
+  users.forEach((u, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><code style="font-size:.78rem">${esc(u.empNo)}</code></td>
+      <td>${esc(u.name)}</td>
+      <td>${esc(u.rank)}</td>
+      <td>${u.isAdmin ? '<span class="badge badge-ok">관리자</span>' : '–'}</td>
+      <td class="hash-cell" title="${esc(u.hash)}">${esc(u.hash.slice(0,20))}…</td>
+      <td><button class="btn btn-sm" style="color:var(--red);background:#fff0f0;border:1px solid #fcc" onclick="removeUser(${i})">삭제</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function removeUser(i) { users.splice(i,1); renderUserTable(); }
+function clearUsers()  { users=[]; renderUserTable(); document.getElementById('authJsonCard').style.display='none'; }
+
+/* ── auth.json 생성 ── */
+async function generateAuthJson() {
+  if (!users.length) { showToast('등록된 사용자가 없습니다.','error'); return; }
+  const salt = document.getElementById('saltInput').value.trim();
+  if (!salt) { showToast('Salt 값을 입력하세요.','error'); return; }
+
+  // 최신 해시로 재생성 (salt 변경에 대응)
+  for (const u of users) {
+    u.hash = await sha256(salt + u.empNo);
+  }
+  renderUserTable();
+
+  const authObj = {
+    _comment: "사번 해시: SHA-256(salt + empNo). salt는 Flow 환경변수에 별도 저장.",
+    _saltHint: salt.slice(0,3) + '*'.repeat(Math.max(0,salt.length-3)), // 앞 3자만 힌트
+    users: users.map(u => ({
+      hash:    u.hash,       // SHA-256(salt+empNo) — 사번 원문 없음
+      name:    u.name,
+      rank:    u.rank,
+      isAdmin: u.isAdmin,
+    }))
+  };
+
+  lastAuthJson = JSON.stringify(authObj, null, 2);
+  document.getElementById('authJsonText').textContent = lastAuthJson;
+  document.getElementById('authJsonCard').style.display = 'block';
+  document.getElementById('authJsonCard').scrollIntoView({ behavior:'smooth', block:'start' });
+  showToast('auth.json이 생성되었습니다.','success');
+}
+
+/* ── 검증 테스트 ── */
+async function verifyEmpNo() {
+  const empNo = document.getElementById('verifyEmpNo').value.trim();
+  if (!empNo) { showToast('사번을 입력하세요.','error'); return; }
+  const hash = await makeHash(empNo);
+  if (!hash) return;
+
+  const el = document.getElementById('verifyResult');
+  el.style.display = 'block';
+  document.getElementById('verifyHashDisplay').childNodes[0]
+    ? (document.getElementById('verifyHashDisplay').textContent = `입력 사번의 해시: ${hash}`)
+    : null;
+  document.getElementById('verifyHashDisplay').textContent = `입력 사번의 해시:\n${hash}`;
+
+  const found = users.find(u=>u.hash===hash);
+  const res   = document.getElementById('verifyMatchResult');
+  if (found) {
+    res.innerHTML = `<div style="padding:10px 14px;background:#f0fff4;border-radius:8px;font-size:.85rem;color:#276749;border:1px solid #9ae6b4">
+      ✅ 일치: <strong>${esc(found.name)} ${esc(found.rank)}</strong>${found.isAdmin?' (관리자)':''}
+    </div>`;
+  } else {
+    res.innerHTML = `<div style="padding:10px 14px;background:#fff5f5;border-radius:8px;font-size:.85rem;color:#9b2c2c;border:1px solid #feb2b2">
+      ❌ 일치하는 사용자 없음 (등록되지 않은 사번이거나 Salt가 다름)
+    </div>`;
+  }
+}
+
+/* ── 다운로드 ── */
+function downloadAuthJson() {
+  if (!lastAuthJson) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lastAuthJson],{type:'application/json'}));
+  a.download = 'auth.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  showToast('auth.json 다운로드 시작.','success');
+}
+
+function copyAuthJson() {
+  if (!lastAuthJson) return;
+  navigator.clipboard.writeText(lastAuthJson).then(()=>showToast('JSON 복사됨.','success'));
+}
+
+function copyText(elId) {
+  const text = document.getElementById(elId).textContent.replace('복사','').trim();
+  navigator.clipboard.writeText(text).then(()=>showToast('복사됨.','success'));
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function showToast(msg,type='info',ms=3200){
+  const el=document.createElement('div');
+  el.className=`toast-item ${type}`;
+  el.innerHTML=`<span>${{success:'✓',error:'✗',info:'ℹ'}[type]||'ℹ'}</span>${msg}`;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(()=>el.remove(),ms);
+}
+</script>
+</body>
+</html>
