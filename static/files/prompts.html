@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>프롬프트 라이브러리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#203B8A;--blue:#3A80F4;
+  --bg-light:#F6F8FA;--bg-muted:#EEF2F6;--white:#fff;
+  --text-primary:#1A2340;--text-secondary:#4A5568;--text-muted:#8A96A8;
+  --border:#DDE3EE;--border-strong:#C5CFE0;
+  --sidebar-w:220px;--header-h:56px;
+  --r:8px;--rl:12px;
+  --sh:0 1px 3px rgba(32,59,138,.08),0 1px 2px rgba(32,59,138,.04);
+  --sh-md:0 4px 12px rgba(32,59,138,.12);
+  --green:#22C55E;--amber:#F59E0B;--red:#EF4444;
+}
+body{font-family:'Pretendard',-apple-system,sans-serif;font-size:14px;color:var(--text-primary);background:var(--bg-light);min-height:100vh;line-height:1.6}
+
+/* ── PIN 인증 모달 공통 스타일 ── */
+@keyframes mIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.auth-card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:48px 52px;max-width:420px;width:100%;text-align:center;box-shadow:var(--sh-md)}
+.auth-user-found{display:none;background:var(--bg-muted);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:.85rem;color:var(--text-secondary);align-items:center;gap:8px;text-align:left}
+.auth-user-found.show{display:flex}
+.auth-user-avatar{width:32px;height:32px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:var(--white);flex-shrink:0}
+.auth-hash-progress{display:none;align-items:center;justify-content:center;gap:8px;margin-bottom:10px}
+.auth-hash-progress.show{display:flex}
+.auth-input.err{border-color:var(--red)!important;animation:shake .35s ease}
+.auth-icon{font-size:44px;margin-bottom:20px}
+.auth-title{font-size:20px;font-weight:700;color:var(--text-primary);margin-bottom:8px}
+.auth-sub{font-size:13px;color:var(--text-muted);margin-bottom:28px;line-height:1.7;white-space: pre-line;}
+.auth-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r);font-family:inherit;font-size:14px;outline:none;transition:border-color .15s;margin-bottom:10px;text-align:center}
+.auth-input:focus{border-color:var(--blue)}
+.auth-btn{width:100%;padding:11px;border-radius:var(--r);border:none;background:var(--navy);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s}
+.auth-btn:hover{background:#1a3070}
+.auth-btn:disabled{opacity:.5;cursor:not-allowed}
+.auth-err{font-size:12px;color:var(--red);margin-top:8px;min-height:18px}
+.auth-hint{font-size:11px;color:var(--text-muted);margin-top:14px;line-height:1.6}
+
+/* ── 관리자 패널 ── */
+.overlay-panel{display:none;position:fixed;inset:0;z-index:8000;background:rgba(10,20,50,.5);align-items:center;justify-content:center;padding:24px}
+.overlay-panel.open{display:flex}
+.panel-box{background:var(--white);border-radius:var(--rl);width:100%;max-width:560px;box-shadow:0 20px 60px rgba(32,59,138,.2);overflow:hidden}
+.panel-hd{background:var(--navy);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between}
+.panel-hd-title{font-size:15px;font-weight:700}
+.panel-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px}
+.panel-body{padding:20px 24px;max-height:60vh;overflow-y:auto}
+.panel-footer{padding:12px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.user-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bg-muted)}
+.user-row:last-child{border-bottom:none}
+.user-email{flex:1;font-size:13px}
+.role-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.role-admin{background:#FEF2F2;color:#991B1B}
+.role-user{background:#E6FAF0;color:#065F46}
+.del-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:15px;width:24px;height:24px;border-radius:4px;transition:all .12s}
+.del-btn:hover{background:#FEF2F2;color:var(--red)}
+.add-row{display:flex;gap:8px;margin-top:14px}
+.add-row input,.add-row select{padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;font-size:13px;outline:none;background:var(--white)}
+.add-row input{flex:1}
+.add-row input:focus,.add-row select:focus{border-color:var(--blue)}
+.add-row button{padding:8px 14px;border-radius:var(--r);border:none;background:var(--navy);color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+
+/* ── 스켈레톤 ── */
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.skeleton{background:linear-gradient(90deg,#e8edf5 25%,#f5f7fb 50%,#e8edf5 75%);background-size:800px 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+.sk-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;height:168px}
+.sk-line{height:12px;margin-bottom:8px}
+
+/* ── Sync Pill ── */
+.sync-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;transition:all .3s}
+.sync-pill.idle{background:rgba(255,255,255,.12);color:rgba(255,255,255,.7)}
+.sync-pill.loading{background:rgba(58,128,244,.25);color:#93c4fd}
+.sync-pill.ok{background:rgba(34,197,94,.2);color:#86efac}
+.sync-pill.err{background:rgba(239,68,68,.2);color:#fca5a5}
+.sync-dot{width:7px;height:7px;border-radius:50%}
+.sync-pill.idle .sync-dot{background:rgba(255,255,255,.4)}
+.sync-pill.loading .sync-dot{background:#3A80F4;animation:pulse .9s infinite}
+.sync-pill.ok .sync-dot{background:#22C55E}
+.sync-pill.err .sync-dot{background:#EF4444}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── 레이아웃 ── */
+.header{position:fixed;top:0;left:0;right:0;z-index:100;height:var(--header-h);background:var(--navy);display:flex;align-items:center;padding:0 20px;gap:12px}
+.h-logo{display:flex;align-items:center;gap:10px;cursor:pointer}
+.h-logo-icon{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:16px}
+.h-logo-text{font-size:16px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.h-logo-text span{color:rgba(255,255,255,.5);font-weight:400;font-size:12px;margin-left:6px}
+.h-spacer{flex:1}
+.h-search{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:6px 14px;width:260px}
+.h-search input{background:none;border:none;outline:none;color:#fff;font-family:inherit;font-size:13px;width:100%}
+.h-search input::placeholder{color:rgba(255,255,255,.45)}
+.h-user{display:flex;align-items:center;gap:7px;padding:5px 12px;border-radius:20px;background:rgba(255,255,255,.1);cursor:pointer;transition:background .15s}
+.h-user:hover{background:rgba(255,255,255,.18)}
+.h-avatar{width:24px;height:24px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.h-user-email{font-size:11px;color:rgba(255,255,255,.85);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.h-btn{display:flex;align-items:center;gap:6px;background:var(--blue);color:#fff;border:none;border-radius:20px;padding:7px 16px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.h-btn:hover{background:#2870e0}
+
+.sidebar{position:fixed;top:var(--header-h);left:0;bottom:0;z-index:90;width:var(--sidebar-w);background:var(--white);border-right:1px solid var(--border);overflow-y:auto;padding:16px 0}
+.sb-label{font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--text-muted);text-transform:uppercase;padding:12px 18px 6px}
+.sb-item{display:flex;align-items:center;gap:10px;padding:8px 18px;cursor:pointer;color:var(--text-secondary);font-size:13px;font-weight:500;border-left:3px solid transparent;transition:all .12s}
+.sb-item:hover{background:var(--bg-light);color:var(--navy)}
+.sb-item.active{background:#EDF2FF;color:var(--navy);border-left-color:var(--navy);font-weight:600}
+.sb-item .ico{font-size:15px;width:20px;text-align:center}
+.sb-badge{margin-left:auto;background:var(--bg-muted);color:var(--text-muted);font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px}
+.sb-item.active .sb-badge{background:rgba(32,59,138,.1);color:var(--navy)}
+.sb-divider{height:1px;background:var(--border);margin:8px 18px}
+
+.main{margin-top:var(--header-h);margin-left:var(--sidebar-w);min-height:calc(100vh - var(--header-h))}
+.page{display:none;padding:28px 32px;max-width:1200px}
+.page.active{display:block}
+
+/* ── 공통 컴포넌트 ── */
+.page-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.page-title{font-size:22px;font-weight:700;color:var(--text-primary);letter-spacing:-.4px}
+.page-sub{font-size:13px;color:var(--text-muted);margin-top:2px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;box-shadow:var(--sh)}
+.stat-lbl{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px}
+.stat-val{font-size:26px;font-weight:700;color:var(--navy);margin-top:4px}
+.stat-s{font-size:12px;color:var(--text-muted);margin-top:2px}
+
+.year-tabs{display:flex;gap:6px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+.ytab{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--text-secondary);transition:all .12s;white-space:nowrap}
+.ytab:hover{border-color:var(--navy);color:var(--navy)}
+.ytab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.ytab.loading-tab{opacity:.6;cursor:default}
+
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--text-secondary);transition:all .12s}
+.chip:hover{border-color:var(--navy);color:var(--navy)}
+.chip.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.f-select{padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--white);font-family:inherit;font-size:12px;font-weight:500;color:var(--text-secondary);cursor:pointer;outline:none;margin-left:10px;}
+.f-select:focus{border-color:var(--blue)}
+
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.p-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;box-shadow:var(--sh);cursor:pointer;transition:box-shadow .15s,border-color .15s,transform .12s;position:relative;overflow:hidden}
+.p-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--navy);opacity:0;transition:opacity .15s}
+.p-card:hover{box-shadow:var(--sh-md);border-color:var(--border-strong);transform:translateY(-1px)}
+.p-card:hover::before{opacity:1}
+.p-card:hover .card-title{color:var(--navy)}
+.card-badges{display:flex;gap:5px;flex-wrap:wrap}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.3px;text-transform:uppercase}
+.bGEN{background:#EDF6FF;color:#1565C0}.bANL{background:#F3E8FF;color:#6B21A8}
+.bEDI{background:#FFF7E6;color:#92400E}.bTRN{background:#E6FAF0;color:#065F46}
+.bCHK{background:#FEF2F2;color:#991B1B}.bTPL{background:#EFF6FF;color:#1E40AF}
+.bL1{background:#E6FAF0;color:#065F46}.bL2{background:#FFF7E6;color:#92400E}.bL3{background:#FEF2F2;color:#991B1B}
+.b-muted{background:var(--bg-muted);color:var(--text-secondary)}
+.card-title{font-size:14px;font-weight:700;color:var(--text-primary);margin:8px 0 4px;line-height:1.4;transition:color .12s}
+.card-code{font-size:10px;color:var(--text-muted);font-family:monospace;margin-bottom:8px}
+.card-excerpt{font-size:12px;color:var(--text-secondary);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-footer{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--bg-muted)}
+.card-author{font-size:11px;color:var(--text-muted)}
+.card-author strong{color:var(--text-secondary);font-weight:600}
+.card-uses{margin-left:auto;font-size:11px;color:var(--text-muted)}
+.card-rating{font-size:11px;color:var(--amber)}
+.card-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.tag{font-size:10px;font-weight:500;padding:2px 7px;border-radius:4px;background:var(--bg-light);color:var(--text-muted);border:1px solid var(--border)}
+
+.empty{text-align:center;padding:60px 20px;color:var(--text-muted)}
+.empty-ico{font-size:40px;margin-bottom:12px;opacity:.4}
+.empty-txt{font-size:14px;font-weight:500;margin-bottom:6px;color:var(--text-secondary)}
+
+/* ── 모달 ── */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(10,20,50,.45);align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:16px;width:100%;max-width:720px;box-shadow:0 20px 60px rgba(32,59,138,.2)}
+.modal-hd{padding:24px 28px 20px;border-bottom:1px solid var(--border)}
+.modal-hd-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.modal-title{font-size:18px;font-weight:700;color:var(--text-primary);line-height:1.3}
+.modal-close{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--bg-light);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-muted);flex-shrink:0;transition:all .12s}
+.modal-close:hover{background:var(--bg-muted)}
+.modal-meta{display:flex;gap:8px;flex-wrap:wrap}
+.modal-body{padding:24px 28px}
+.modal-sec{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px}
+.prompt-block{background:#F8FAFF;border:1px solid var(--border);border-radius:var(--r);padding:16px;font-size:13px;line-height:1.8;color:var(--text-primary);white-space:pre-wrap;font-family:'Pretendard',sans-serif;margin-bottom:20px;max-height:260px;overflow-y:auto}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.info-item label{font-size:11px;font-weight:600;color:var(--text-muted);display:block;margin-bottom:3px}
+.info-item span{font-size:13px;font-weight:500;color:var(--text-primary)}
+.guide-box{background:var(--bg-light);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;font-size:13px}
+.guide-box p{color:var(--text-secondary);margin:4px 0}
+.guide-box strong{color:var(--text-primary);font-weight:600}
+.modal-actions{display:flex;gap:8px;padding:16px 28px;border-top:1px solid var(--border);flex-wrap:wrap;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .12s}
+.btn-primary{background:var(--navy);color:#fff}.btn-primary:hover{background:#1a3070}
+.btn-secondary{background:var(--white);color:var(--text-primary);border-color:var(--border)}.btn-secondary:hover{background:var(--bg-light)}
+.btn-ghost{background:transparent;color:var(--text-secondary)}.btn-ghost:hover{background:var(--bg-light);color:var(--text-primary)}
+.btn-danger{background:transparent;color:var(--red);margin-left:auto}.btn-danger:hover{background:#FEF2F2}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.ver-table{width:100%;border-collapse:collapse;font-size:12px}
+.ver-table th,.ver-table td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--bg-muted)}
+.ver-table th{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;background:var(--bg-light)}
+.ver-chip{display:inline-block;padding:1px 6px;border-radius:4px;background:var(--bg-muted);font-size:10px;font-weight:700;color:var(--navy);font-family:monospace}
+
+/* ── 폼 ── */
+.form-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:24px 28px;margin-bottom:20px;box-shadow:var(--sh)}
+.form-title{font-size:16px;font-weight:700;margin-bottom:20px;color:var(--text-primary)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fg{margin-bottom:0}.fg.full{grid-column:1/-1}
+.form-label{font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:5px}
+.form-label .req{color:#E53E3E}
+.form-input,.form-select,.form-textarea{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;font-size:13px;color:var(--text-primary);background:var(--white);outline:none;transition:border-color .12s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--blue)}
+.form-textarea{min-height:120px;resize:vertical;line-height:1.7}
+.form-hint{font-size:11px;color:var(--text-muted);margin-top:4px}
+.form-actions{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
+
+/* ── 탭 ── */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab-btn{padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:none;font-family:inherit;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s}
+.tab-btn:hover{color:var(--navy)}.tab-btn.active{color:var(--navy);border-bottom-color:var(--navy)}
+.tab-pane{display:none}.tab-pane.active{display:block}
+
+/* ── 차트 ── */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.chart-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:18px 20px;box-shadow:var(--sh)}
+.chart-title{font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:16px}
+.bar-item{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.bar-lbl{font-size:12px;color:var(--text-secondary);width:110px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-track{flex:1;height:8px;background:var(--bg-muted);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:var(--navy);transition:width .4s}
+.bar-cnt{font-size:11px;font-weight:600;color:var(--text-muted);width:28px;text-align:right}
+
+/* ── 테이블 ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg-light)}
+td{padding:10px 12px;border-bottom:1px solid var(--bg-muted);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg-light)}
+.r-great{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:#E6FAF0;color:#065F46}
+.r-good{background:#EDF6FF;color:#1565C0}.r-ok{background:#FFF7E6;color:#92400E}.r-poor{background:#FEF2F2;color:#991B1B}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.metric-row{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--bg-muted);gap:12px}
+.metric-row:last-child{border-bottom:none}
+.metric-name{font-size:13px;font-weight:600;color:var(--text-primary);flex:1}
+.metric-method{font-size:12px;color:var(--text-muted);flex:2}
+.metric-target{font-size:12px;font-weight:700;color:var(--navy);background:#EDF2FF;padding:2px 8px;border-radius:10px;flex-shrink:0}
+
+.toast{position:fixed;bottom:24px;right:24px;z-index:9000;background:var(--navy);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:var(--sh-md);transform:translateY(60px);opacity:0;transition:all .25s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* MD 드롭존 */
+.md-drop-active{border-color:var(--blue)!important;background:#EDF6FF!important}
+.md-parse-ok{background:#E6FAF0;color:#065F46;border-radius:var(--r);padding:8px 12px;display:flex;align-items:center;gap:8px}
+.md-parse-err{background:#FEF2F2;color:#991B1B;border-radius:var(--r);padding:8px 12px;display:flex;align-items:center;gap:8px}
+.md-parse-field{font-size:11px;background:var(--bg-muted);border-radius:4px;padding:2px 6px;margin:0 2px}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:10px}
+@media(max-width:768px){:root{--sidebar-w:0px}.sidebar{display:none}.stats-row{grid-template-columns:1fr 1fr}.form-grid{grid-column:1fr}.chart-row{grid-template-columns:1fr}.page{padding:16px}}
+</style>
+</head>
+<body>
+
+<!-- 사번 인증 모달 -->
+<div id="pinWall" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(16,24,48,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+  <div class="auth-card" style="max-width:380px;animation:mIn .22s ease">
+    <div class="auth-icon">🔑</div>
+    <div class="auth-title" id="pinTitle">사번 확인</div>
+    <div class="auth-sub" id="pinSub">사번을 입력하면 게시물을 확인할 수 있습니다.<br>작성자는 수정·삭제 권한이 활성화됩니다.</div>
+    <!-- 사용자 미리보기 (데모 모드에서만 표시) -->
+    <div class="auth-user-found" id="authUserFound">
+      <div class="auth-user-avatar" id="authUserAvatar">?</div>
+      <div><div id="authUserName" style="font-weight:700;font-size:.9rem"></div><div id="authUserRank" style="font-size:.78rem;color:var(--text-muted)"></div></div>
+    </div>
+    <!-- 해시 진행 표시 -->
+    <div class="auth-hash-progress" id="authHashProgress">
+      <div class="sync-dot" style="background:var(--blue);animation:pulse .9s infinite"></div>
+      <span style="font-size:.78rem">암호화 처리 중…</span>
+    </div>
+    <input class="auth-input" type="password" id="pinInput"
+      placeholder="사번 8자리"
+      maxlength="8" autocomplete="off" inputmode="numeric"
+      onkeydown="if(event.key==='Enter')submitPin()">
+    <div class="auth-err" id="pinErr"></div>
+    <button class="auth-btn" id="pinBtn" onclick="submitPin()">
+      <span id="pinBtnText">확인</span>
+      <span id="pinSpinner" style="display:none;margin-left:6px">⟳</span>
+    </button>
+    <button style="margin-top:14px;background:none;border:none;font-size:12px;color:var(--text-muted);cursor:pointer;font-family:inherit;width:100%" onclick="closePinWall()">취소</button>
+    <!-- 데모 모드 힌트 (IS_DEMO=true 일 때 boot()에서 show 클래스 추가) -->
+    <div id="pinDemoHint" style="display:none;margin-top:16px;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:10px 14px;font-size:11.5px;color:#92400E;line-height:1.7;text-align:left">
+      <strong>🔧 데모 모드 테스트 사번</strong><br>
+      <span style="font-family:monospace;font-weight:700">00000001</span> — 홍길동 책임 (관리자)<br>
+      <span style="font-family:monospace;font-weight:700">00000002</span> — 김민지 선임<br>
+      <span style="font-family:monospace;font-weight:700">00000003</span> — 이준호 사원<br>
+      <span style="font-family:monospace;font-weight:700">00000004</span> — 박서연 팀장 (관리자)
+    </div>
+  </div>
+</div>
+
+<!-- 관리자 패널 -->
+<div class="overlay-panel" id="adminPanel" onclick="if(event.target===this)closeAdmin()">
+  <div class="panel-box">
+    <div class="panel-hd">
+      <span class="panel-hd-title">🛡️ 접근 권한 관리</span>
+      <button class="panel-close" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="panel-body">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
+        사번은 <strong>해시 처리되어</strong> 저장됩니다. 저장 시 SharePoint의 <code>auth.json</code>이 업데이트됩니다.
+      </div>
+      <div id="userList"></div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:10px">새 사용자 추가</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <input type="text" id="newEmpId" placeholder="사번 (평문 입력)" style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;font-size:13px;outline:none">
+          <input type="text" id="newName" placeholder="성명" style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;font-size:13px;outline:none">
+          <input type="text" id="newRank" placeholder="직위 (예: 책임, 대리)" style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;font-size:13px;outline:none">
+          <select id="newRole" style="padding:8px 10px;border:1px solid var(--border);border-radius:var(--r);font-family:inherit;font-size:13px;outline:none;background:var(--white)">
+            <option value="user">일반</option>
+            <option value="admin">관리자</option>
+          </select>
+        </div>
+        <button onclick="addUser()" style="padding:8px 16px;border-radius:var(--r);border:none;background:var(--navy);color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;width:100%">추가</button>
+      </div>
+    </div>
+    <div class="panel-footer">
+      <button class="btn btn-ghost" onclick="closeAdmin()">취소</button>
+      <button class="btn btn-primary" onclick="saveAuth()">💾 저장 (해시 적용)</button>
+    </div>
+  </div>
+</div>
+
+<!-- 헤더 -->
+<header class="header">
+  <div class="h-logo" onclick="navigate('home')">
+    <div class="h-logo-icon">📚</div>
+    <div class="h-logo-text">프롬프트 라이브러리 <span>Prompts Library</span></div>
+  </div>
+  <div class="h-spacer"></div>
+  <div class="h-search">
+    <svg width="14" height="14" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="globalSearch" placeholder="프롬프트 검색…" oninput="onSearch(this.value)">
+  </div>
+  <div class="sync-pill idle" id="syncPill"><span class="sync-dot"></span><span id="syncLabel">대기 중</span></div>
+  <div class="h-user" id="hUser" style="display:none" onclick="if(CUR_USER?.isAdmin)openAdmin()">
+    <div class="h-avatar" id="hAvatar">?</div>
+    <span class="h-user-email" id="hUserLabel"></span>
+  </div>
+  <button class="h-btn" onclick="requireAuthThenAdd()">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    새 프롬프트 등록
+  </button>
+</header>
+
+<!-- 사이드바 -->
+<nav class="sidebar">
+  <div class="sb-label">메인</div>
+  <div class="sb-item active" id="nav-home" onclick="navigate('home')"><span class="ico">🏠</span> 전체 라이브러리<span class="sb-badge" id="badge-total">-</span></div>
+  <div class="sb-item" id="nav-popular" onclick="navigate('popular')"><span class="ico">🔥</span> 인기 프롬프트</div>
+  <div class="sb-item" id="nav-recent" onclick="navigate('recent')"><span class="ico">🕐</span> 최근 수정</div>
+  <div class="sb-divider"></div>
+  <div class="sb-label">용도별</div>
+  <div class="sb-item" onclick="filterByType('GEN')"><span class="ico">✍️</span> 생성 (GEN)</div>
+  <div class="sb-item" onclick="filterByType('ANL')"><span class="ico">📊</span> 분석 (ANL)</div>
+  <div class="sb-item" onclick="filterByType('EDI')"><span class="ico">✏️</span> 편집 (EDI)</div>
+  <div class="sb-item" onclick="filterByType('TRN')"><span class="ico">🔄</span> 변환 (TRN)</div>
+  <div class="sb-item" onclick="filterByType('CHK')"><span class="ico">✅</span> 검증 (CHK)</div>
+  <div class="sb-item" onclick="filterByType('TPL')"><span class="ico">📋</span> 템플릿 (TPL)</div>
+  <div class="sb-divider"></div>
+  <div class="sb-label">관리</div>
+  <div class="sb-item" id="nav-add" onclick="requireAuthThenAdd()"><span class="ico">➕</span> 프롬프트 등록</div>
+  <div class="sb-item" id="nav-metrics" onclick="navigate('metrics')"><span class="ico">📈</span> 효과 측정</div>
+  <div class="sb-item" id="nav-dashboard" onclick="navigate('dashboard')"><span class="ico">🎛️</span> 대시보드</div>
+  <div class="sb-divider" id="sb-adiv" style="display:none"></div>
+  <div class="sb-label" id="sb-albl" style="display:none">관리자</div>
+  <div class="sb-item" id="sb-aitem" style="display:none" onclick="openAdmin()"><span class="ico">🛡️</span> 접근 권한 관리</div>
+</nav>
+
+<!-- 메인 -->
+<main class="main">
+
+<!-- 홈 -->
+<div class="page active" id="page-home">
+  <div class="page-title-row">
+    <div><div class="page-title">전체 프롬프트 라이브러리</div><div class="page-sub">팀이 함께 쌓아가는 AI 프롬프트 지식 베이스</div></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-lbl">전체 프롬프트</div><div class="stat-val" id="stat-total">-</div><div class="stat-s">등록된 수</div></div>
+    <div class="stat-card"><div class="stat-lbl">총 사용 횟수</div><div class="stat-val" style="color:var(--blue)" id="stat-uses">-</div><div class="stat-s">누적 기록</div></div>
+    <div class="stat-card"><div class="stat-lbl">평균 품질</div><div class="stat-val" style="color:var(--amber)" id="stat-quality">-</div><div class="stat-s">효과 평가</div></div>
+    <div class="stat-card"><div class="stat-lbl">마지막 동기화</div><div class="stat-val" style="font-size:14px;padding-top:6px" id="stat-sync">-</div><div class="stat-s" id="stat-src">-</div></div>
+  </div>
+  <div id="yearTabsWrap"></div>
+  <div class="filter-bar">
+    <span class="chip active" onclick="setTypeFilter(null,this)">전체</span>
+    <span class="chip" onclick="setTypeFilter('GEN',this)">✍️ 생성</span>
+    <span class="chip" onclick="setTypeFilter('ANL',this)">📊 분석</span>
+    <span class="chip" onclick="setTypeFilter('EDI',this)">✏️ 편집</span>
+    <span class="chip" onclick="setTypeFilter('TRN',this)">🔄 변환</span>
+    <span class="chip" onclick="setTypeFilter('CHK',this)">✅ 검증</span>
+    <span class="chip" onclick="setTypeFilter('TPL',this)">📋 템플릿</span>
+    <select class="f-select" id="levelFilter" onchange="renderCards()">
+      <option value="">전체 난이도</option>
+      <option value="L1">L1 초급</option><option value="L2">L2 중급</option><option value="L3">L3 고급</option>
+    </select>
+    <select class="f-select" id="sortFilter" onchange="renderCards()">
+      <option value="date">최근 수정순</option><option value="uses">사용 횟수순</option><option value="quality">품질순</option>
+    </select>
+  </div>
+  <div class="card-grid" id="cardGrid"></div>
+  <div class="empty" id="emptyState" style="display:none"><div class="empty-ico">📭</div><div class="empty-txt">검색 결과가 없습니다</div><div style="font-size:12px">다른 키워드나 필터를 사용해보세요</div></div>
+</div>
+
+<!-- 인기 -->
+<div class="page" id="page-popular"><div class="page-title-row"><div><div class="page-title">🔥 인기 프롬프트</div><div class="page-sub">사용 횟수 기준 상위 프롬프트</div></div></div><div class="card-grid" id="popularGrid"></div></div>
+
+<!-- 최근 -->
+<div class="page" id="page-recent"><div class="page-title-row"><div><div class="page-title">🕐 최근 수정 프롬프트</div><div class="page-sub">최근 업데이트된 순서</div></div></div><div class="card-grid" id="recentGrid"></div></div>
+
+<!-- 등록/수정 -->
+<div class="page" id="page-add">
+  <div class="page-title-row">
+    <div>
+      <div class="page-title" id="addPageTitle">➕ 새 프롬프트 등록</div>
+      <div class="page-sub" id="addPageSub">새로운 프롬프트를 라이브러리에 추가합니다</div>
+    </div>
+  </div>
+
+  <!-- MD 업로드 존 -->
+  <div class="form-card" id="mdUploadCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="form-title" style="margin-bottom:0">📄 MD 파일로 불러오기 <span style="font-size:12px;font-weight:400;color:var(--text-muted)">(선택 사항)</span></div>
+      <span style="font-size:11px;color:var(--text-muted)">업로드하면 폼이 자동으로 채워집니다</span>
+    </div>
+    <div id="mdDropZone"
+      style="border:2px dashed var(--border);border-radius:var(--r);padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg-light)"
+      onclick="document.getElementById('mdFileInput').click()"
+      ondragover="mdDragOver(event)" ondragleave="mdDragLeave(event)" ondrop="mdDrop(event)">
+      <div style="font-size:28px;margin-bottom:8px">📥</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:4px">클릭하거나 .md 파일을 드래그하세요</div>
+      <div style="font-size:11px;color:var(--text-muted)">MD 템플릿 형식 파일만 지원합니다</div>
+    </div>
+    <input type="file" id="mdFileInput" accept=".md,text/markdown" style="display:none" onchange="mdFileSelected(event)">
+    <div id="mdParseResult" style="margin-top:10px;font-size:12px;display:none"></div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-title">기본 정보</div>
+    <div class="form-grid">
+      <div class="fg full"><label class="form-label">프롬프트 이름 <span class="req">*</span></label><input type="text" class="form-input" id="f-title" placeholder="예: 회의록 자동 요약 프롬프트"></div>
+      <div class="fg"><label class="form-label">용도 <span class="req">*</span></label>
+        <select class="form-select" id="f-type"><option value="">선택</option><option value="GEN">GEN – 생성</option><option value="ANL">ANL – 분석</option><option value="EDI">EDI – 편집</option><option value="TRN">TRN – 변환</option><option value="CHK">CHK – 검증</option><option value="TPL">TPL – 템플릿</option></select>
+      </div>
+      <div class="fg"><label class="form-label">난이도 <span class="req">*</span></label>
+        <select class="form-select" id="f-level"><option value="">선택</option><option value="L1">L1 – 초급</option><option value="L2">L2 – 중급</option><option value="L3">L3 – 고급</option></select>
+      </div>
+      <div class="fg"><label class="form-label">작성자 <span style="font-size:10px;color:var(--text-muted)">(사번 인증 시 자동입력)</span></label>
+        <div style="display:flex;gap:6px">
+          <input type="text" class="form-input" id="f-author" placeholder="성명" style="flex:1" readonly>
+          <select class="form-select" id="f-rank" style="width:100px" disabled>
+            <option value="">직위</option>
+            <option value="사원">사원</option>
+            <option value="선임">선임</option>
+            <option value="책임">책임</option>
+            <option value="팀장">팀장</option>
+          </select>
+        </div>
+        <div class="form-hint">사번 인증 후 자동으로 채워집니다</div>
+      </div>
+      <div class="fg"><label class="form-label">버전</label><input type="text" class="form-input" id="f-version" value="v1.0"></div>
+      <div class="fg"><label class="form-label">효과 평가</label>
+        <select class="form-select" id="f-rating"><option value="매우 좋음">⭐⭐⭐⭐⭐ 매우 좋음</option><option value="좋음" selected>⭐⭐⭐⭐ 좋음</option><option value="보통">⭐⭐⭐ 보통</option><option value="개선 필요">⭐⭐ 개선 필요</option></select>
+      </div>
+      <div class="fg"><label class="form-label">태그 (쉼표 구분)</label><input type="text" class="form-input" id="f-tags" placeholder="보고서, 요약, 업무효율"></div>
+    </div>
+  </div>
+  <div class="form-card"><div class="form-title">프롬프트 본문</div><div class="fg full"><label class="form-label">프롬프트 전문 <span class="req">*</span></label><textarea class="form-textarea" id="f-prompt" style="min-height:180px" placeholder="프롬프트 내용을 입력하세요."></textarea></div></div>
+  <div class="form-card">
+    <div class="form-title">사용 가이드</div>
+    <div class="form-grid">
+      <div class="fg full"><label class="form-label">언제 사용하나요?</label><input type="text" class="form-input" id="f-when"></div>
+      <div class="fg full"><label class="form-label">필수 입력 변수</label><input type="text" class="form-input" id="f-inputs" placeholder="[회의 날짜], [참석자 목록]"></div>
+      <div class="fg full"><label class="form-label">주의사항 및 팁</label><textarea class="form-textarea" id="f-memo" style="min-height:70px"></textarea></div>
+      <div class="fg full"><label class="form-label">출력 예시</label><textarea class="form-textarea" id="f-output-ex" style="min-height:70px"></textarea></div>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" id="saveBtn" onclick="savePrompt()">💾 라이브러리에 저장</button>
+    <button class="btn btn-secondary" onclick="downloadTemplate()">📥 MD 템플릿 다운로드</button>
+    <button class="btn btn-ghost" onclick="cancelEdit()">취소</button>
+  </div>
+  <div id="saveStatus" style="font-size:12px;color:var(--text-muted);margin-top:8px"></div>
+</div>
+
+<!-- 효과 측정 -->
+<div class="page" id="page-metrics">
+  <div class="page-title-row"><div><div class="page-title">📈 효과 측정 시스템</div><div class="page-sub">프롬프트 라이브러리 활용 지표 및 ROI 분석</div></div></div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('kpi',this)">KPI 지표</button>
+    <button class="tab-btn" onclick="switchTab('roi',this)">ROI 계산기</button>
+    <button class="tab-btn" onclick="switchTab('monthly',this)">월간 리포트</button>
+  </div>
+  <div class="tab-pane active" id="tab-kpi">
+    <div class="form-card"><div class="form-title">📊 핵심 성과 지표</div><div id="kpiRows"></div></div>
+    <div class="form-card">
+      <div class="form-title">효과 기록 추가</div>
+      <div class="form-grid">
+        <div class="fg"><label class="form-label">사용일</label><input type="date" class="form-input" id="eff-date"></div>
+        <div class="fg"><label class="form-label">업무 내용</label><input type="text" class="form-input" id="eff-task" placeholder="주간 보고서 작성"></div>
+        <div class="fg"><label class="form-label">AI 소요 시간 (분)</label><input type="number" class="form-input" id="eff-ai" placeholder="15"></div>
+        <div class="fg"><label class="form-label">기존 소요 시간 (분)</label><input type="number" class="form-input" id="eff-old" placeholder="60"></div>
+        <div class="fg"><label class="form-label">품질 평가 (1-5)</label>
+          <select class="form-select" id="eff-quality"><option value="5">5 – 매우 좋음</option><option value="4" selected>4 – 좋음</option><option value="3">3 – 보통</option><option value="2">2 – 미흡</option><option value="1">1 – 개선 필요</option></select>
+        </div>
+        <div class="fg"><label class="form-label">수정 횟수</label><input type="number" class="form-input" id="eff-edits" placeholder="1"></div>
+        <div class="fg full"><label class="form-label">메모</label><input type="text" class="form-input" id="eff-memo"></div>
+      </div>
+      <div class="form-actions" style="margin-top:14px"><button class="btn btn-primary" onclick="addEffect()">기록 추가</button></div>
+    </div>
+    <div class="form-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="form-title" style="margin-bottom:0">효과 기록 내역</div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;color:var(--text-muted);font-weight:600">연도:</span><div id="effYearTabs" style="display:flex;gap:4px"></div></div>
+      </div>
+      <div class="tbl-wrap"><table><thead><tr><th>날짜</th><th>업무</th><th>AI(분)</th><th>기존(분)</th><th>절약률</th><th>품질</th><th>수정</th></tr></thead><tbody id="effectBody"></tbody></table></div>
+    </div>
+  </div>
+  <div class="tab-pane" id="tab-roi">
+    <div class="form-card"><div class="form-title">💰 ROI 계산기</div>
+      <div class="form-grid">
+        <div class="fg"><label class="form-label">월 구독 비용 (원)</label><input type="number" class="form-input" id="roi-tool" value="80000"></div>
+        <div class="fg"><label class="form-label">초기 세팅 시간 (시간)</label><input type="number" class="form-input" id="roi-setup" value="20"></div>
+        <div class="fg"><label class="form-label">월간 관리 시간 (시간)</label><input type="number" class="form-input" id="roi-mgmt" value="2"></div>
+        <div class="fg"><label class="form-label">팀 시급 (원)</label><input type="number" class="form-input" id="roi-wage" value="30000"></div>
+        <div class="fg"><label class="form-label">월간 AI 사용 건수</label><input type="number" class="form-input" id="roi-cases" value="200"></div>
+        <div class="fg"><label class="form-label">건당 절약 시간 (분)</label><input type="number" class="form-input" id="roi-save" value="15"></div>
+      </div>
+      <div class="form-actions" style="margin-top:14px"><button class="btn btn-primary" onclick="calcROI()">📊 ROI 계산</button></div>
+      <div id="roiResult" style="margin-top:20px;display:none"><div class="kpi-grid" id="roiCards"></div><div id="roiDetail" style="font-size:13px;color:var(--text-secondary);line-height:2;background:var(--bg-light);border-radius:var(--r);padding:14px 16px"></div></div>
+    </div>
+  </div>
+  <div class="tab-pane" id="tab-monthly">
+    <div class="form-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="form-title" style="margin-bottom:0">📋 월간 효과 리포트</div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;color:var(--text-muted);font-weight:600">연도:</span><div id="monthlyYearTabs" style="display:flex;gap:4px"></div></div>
+      </div>
+      <div id="monthlyReport"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 대시보드 -->
+<div class="page" id="page-dashboard">
+  <div class="page-title-row"><div><div class="page-title">🎛️ 라이브러리 대시보드</div><div class="page-sub">프롬프트 활용 현황</div></div></div>
+  <div class="chart-row">
+    <div class="chart-card"><div class="chart-title">용도별 분포</div><div id="typeChart"></div></div>
+    <div class="chart-card"><div class="chart-title">인기 프롬프트 TOP 5</div><div id="topChart"></div></div>
+  </div>
+  <div class="chart-card" style="margin-bottom:14px"><div class="chart-title">전체 프롬프트 목록</div>
+    <div class="tbl-wrap"><table><thead><tr><th>이름</th><th>코드</th><th>용도</th><th>난이도</th><th>연도</th><th>사용횟수</th><th>효과평가</th><th>최종수정</th><th>작성자</th></tr></thead><tbody id="dashBody"></tbody></table></div>
+  </div>
+</div>
+</main>
+
+<!-- 상세 모달 -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-hd-top"><div class="modal-title" id="mTitle"></div><button class="modal-close" onclick="closeModal()">✕</button></div>
+      <div class="modal-meta" id="mMeta"></div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-sec">프롬프트 본문</div>
+      <div class="prompt-block" id="mPrompt"></div>
+      <div class="info-grid" id="mInfoGrid"></div>
+      <div><div class="modal-sec">사용 가이드</div><div class="guide-box" id="mGuide"></div></div>
+      <div style="margin-top:16px"><div class="modal-sec">버전 이력</div>
+        <table class="ver-table"><thead><tr><th>버전</th><th>날짜</th><th>변경 내용</th><th>사유</th></tr></thead><tbody id="mVersionBody"></tbody></table>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="copyPrompt()">📋 복사</button>
+      <button class="btn btn-secondary" onclick="exportMD()">📥 MD</button>
+      <button class="btn btn-ghost" id="editBtn" onclick="openEditMode()" style="display:none">✏️ 수정</button>
+      <button class="btn btn-ghost" onclick="incrementUse()">✅ 사용완료(+1)</button>
+      <button class="btn btn-danger" id="delBtn" onclick="deletePrompt()" style="display:none">🗑️ 삭제</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   CONFIG  ★ 수정 필요 항목
+══════════════════════════════════════════════════════ */
+const CONFIG = {
+  // ★ 데모 모드 (true = 샘플 데이터 표시 / false = Power Automate Flow 실사용)
+  DEMO_MODE: true,
+
+  // ★ Power Automate Flow HTTP 트리거 URL (각각 복사하여 붙여넣기)
+  FLOW_READ:    '',   // ← READ Flow URL
+  FLOW_WRITE:   '',   // ← WRITE Flow URL
+
+  // ★ SharePoint 폴더 경로 (사이트 상대 경로)
+  //   예: /sites/MySite/Shared Documents/프롬프트 라이브러리
+  SP_FOLDER: '/sites/{사이트명}/Shared Documents/프롬프트 라이브러리',
+
+  FLOW_TIMEOUT: 20000,
+  SESSION_KEY:  'pl_user_session',
+};
+
+// DEMO_MODE: CONFIG에서 명시적으로 설정. FLOW URL이 없으면 자동으로 데모로 fallback
+const IS_DEMO = CONFIG.DEMO_MODE || !CONFIG.FLOW_READ || !CONFIG.FLOW_WRITE;
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ② 상수
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+const TL = {GEN:'생성',ANL:'분석',EDI:'편집',TRN:'변환',CHK:'검증',TPL:'템플릿'};
+const TI = {GEN:'✍️',ANL:'📊',EDI:'✏️',TRN:'🔄',CHK:'✅',TPL:'📋'};
+const LL = {L1:'초급',L2:'중급',L3:'고급'};
+const RM = {'매우 좋음':5,'좋음':4,'보통':3,'개선 필요':2};
+const RS = {'매우 좋음':'⭐⭐⭐⭐⭐','좋음':'⭐⭐⭐⭐','보통':'⭐⭐⭐','개선 필요':'⭐⭐'};
+const RC = {'매우 좋음':'r-great','좋음':'r-good','보통':'r-ok','개선 필요':'r-poor'};
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ③ 런타임 상태 (메모리 + sessionStorage 캐싱)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+// sessionStorage: 탭 세션 동안 유지, 탭 닫으면 소멸
+const SS = {
+  get(k)    { try{ const v=sessionStorage.getItem(k); return v?JSON.parse(v):null; }catch{ return null; } },
+  set(k,v)  { try{ sessionStorage.setItem(k,JSON.stringify(v)); }catch{} },
+  del(k)    { try{ sessionStorage.removeItem(k); }catch{} },
+};
+const SK = {
+  FILES:    'pl:files',        // 폴더 내 파일 목록 캐시
+  YEAR:     y=>`pl:year:${y}`,
+  EFF:      y=>`pl:eff:${y}`,
+  AUTH:     'pl:auth',
+};
+
+let YEAR_CACHE    = {};   // { 2025: {year,prompts:[]} }  — 메모리 캐시
+let EFF_CACHE     = {};   // { 2025: [...records] }
+let AUTH_DATA     = {users:[]};
+let CUR_USER      = null;
+let ADMIN_DRAFT   = [];
+let ACTIVE_YEAR   = 'all';
+let ACTIVE_EFF_Y  = new Date().getFullYear();
+let ACTIVE_MODAL  = null;
+let TYPE_FILTER   = null;
+let EDIT_ID       = null;  // 수정 중인 프롬프트 ID (null=신규)
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ④ Flow 호출 헬퍼 (library_v19 동일 패턴)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+function withTimeout(p, ms){
+  return Promise.race([p, new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),ms))]);
+}
+
+async function callFlow(url, body){
+  try{
+    const r = await withTimeout(
+      fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}),
+      CONFIG.FLOW_TIMEOUT
+    );
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const ct = r.headers.get('content-type')||'';
+    return ct.includes('application/json') ? await r.json() : {text: await r.text()};
+  }catch(e){ console.error('[Flow]', body.action, e.message); return null; }
+}
+
+const flowRead  = b => callFlow(CONFIG.FLOW_READ,  b);
+const flowWrite = b => callFlow(CONFIG.FLOW_WRITE, b);
+
+// 파일 경로 헬퍼 (SP_FOLDER 포함 전체 경로)
+const pathOf = {
+  auth:    ()  => `${CONFIG.SP_FOLDER}/auth.json`,
+  prompts: (y) => `${CONFIG.SP_FOLDER}/prompts-${y}.json`,
+  effects: (y) => `${CONFIG.SP_FOLDER}/effects-${y}.json`,
+};
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑤ Sync Pill
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+let _syncTimer;
+function setSyncState(state,label){
+  clearTimeout(_syncTimer);
+  const el=document.getElementById('syncPill');
+  el.className='sync-pill '+state;
+  document.getElementById('syncLabel').textContent=label;
+  if(state==='ok') _syncTimer=setTimeout(()=>setSyncState('idle','대기 중'),3000);
+}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑥ SHA-256 해싱 (Web Crypto API)
+  library_v19 동일 패턴:
+  1. get-salt   → Flow가 auth.json에서 해당 empNo의 salt 반환
+                  (없으면 임의 salt 반환 — 사번 존재 여부 노출 방지)
+  2. 브라우저   → SHA-256("{salt}:{empNo}") → hex 해시
+  3. verify-empno → Flow가 저장된 hash와 비교
+                    → {ok, empNo, name, rank, isAdmin, userList}
+  ※ 사번 평문은 네트워크 미전송, auth.json에도 평문 미저장
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+async function sha256hex(message){
+  const encoder = new TextEncoder();
+  const data     = encoder.encode(message);
+  const hashBuf  = await crypto.subtle.digest('SHA-256', data);
+  const hashArr  = Array.from(new Uint8Array(hashBuf));
+  return hashArr.map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function hashEmpNo(empNo, salt){
+  return sha256hex(`${salt}:${empNo}`);
+}
+
+const SK_SESSION = CONFIG.SESSION_KEY;
+
+function saveSession(user){ try{ sessionStorage.setItem(SK_SESSION, JSON.stringify(user)); }catch(_){} }
+function restoreSession(){
+  try{
+    const u = JSON.parse(sessionStorage.getItem(SK_SESSION));
+    if(!u) return false;
+    u.isAdmin = (u.isAdmin === true || u.isAdmin === 'true');
+    CUR_USER = u;
+    return true;
+  }catch{ return false; }
+}
+function clearSession(){ sessionStorage.removeItem(SK_SESSION); }
+
+async function loadAuth(){
+  if(IS_DEMO){
+    // 데모: 팀 공통 SALT='demo', 사번은 해시로만 저장
+    // empHash = SHA-256("demo:사번") 브라우저에서 계산
+    const demoSalt = 'demo';
+    AUTH_DATA = { salt: demoSalt, users:[
+      { hash: await sha256hex(`${demoSalt}:00000001`), name:'홍길동', rank:'책임', isAdmin:true  },
+      { hash: await sha256hex(`${demoSalt}:00000002`), name:'김민지', rank:'선임', isAdmin:false },
+      { hash: await sha256hex(`${demoSalt}:00000003`), name:'이준호', rank:'사원', isAdmin:false },
+      { hash: await sha256hex(`${demoSalt}:00000004`), name:'박서연', rank:'팀장', isAdmin:true  },
+    ]};
+    return;
+  }
+  const cached = SS.get(SK.AUTH);
+  if(cached){ AUTH_DATA=cached; return; }
+  try{
+    const data = await flowRead({action:'get-auth'});
+    AUTH_DATA  = data || {users:[]};
+    SS.set(SK.AUTH, AUTH_DATA);
+  }catch(e){
+    console.error('[AUTH]',e);
+    AUTH_DATA={users:[]};
+  }
+}
+
+// PIN 모달 상태
+let _pendingPromptId = null;
+
+function requestPin(promptId){
+  _pendingPromptId = promptId;
+  const forAdd     = (promptId === '__ADD__');
+  document.getElementById('pinErr').textContent = '';
+  document.getElementById('pinInput').value     = '';
+  document.getElementById('authHashProgress').classList.remove('show');
+  document.getElementById('authUserFound').classList.remove('show');
+  document.getElementById('pinTitle').textContent = forAdd ? '사번 인증' : '사번 확인';
+  document.getElementById('pinSub').textContent   = forAdd
+    ? '프롬프트를 등록하려면 사번 인증이 필요합니다.'
+    : '사번을 입력하면 게시물을 확인할 수 있습니다.\n 작성자는 수정·삭제 권한이 활성화됩니다.';
+  document.getElementById('pinWall').style.display = 'flex';
+  // 데모 모드 힌트 박스
+  const hint = document.getElementById('pinDemoHint');
+  if(hint) hint.style.display = IS_DEMO ? 'block' : 'none';
+  setTimeout(()=>document.getElementById('pinInput').focus(), 100);
+}
+
+function requireAuthThenAdd(){
+  if(CUR_USER){ navigate('add'); return; }
+  _pendingPromptId = '__ADD__';
+  requestPin(null);
+}
+
+function closePinWall(){
+  document.getElementById('pinWall').style.display = 'none';
+  _pendingPromptId = null;
+}
+
+// 사번 입력 중 미리보기 (AUTH_DATA.users의 이름/직위만 표시 — 해시 미노출)
+document.getElementById('pinInput').addEventListener('input', function(){
+  const val = this.value.trim();
+  document.getElementById('pinErr').textContent = '';
+  const found = IS_DEMO
+    ? AUTH_DATA.users?.find(u=>u.empNo===val)
+    : null; // 실제 환경에서는 미리보기 비활성화 (사번 존재 여부 노출 방지)
+  const foundEl = document.getElementById('authUserFound');
+  if(found){
+    document.getElementById('authUserAvatar').textContent = found.name[0];
+    document.getElementById('authUserName').textContent   = found.name;
+    document.getElementById('authUserRank').textContent   = `${found.rank}${found.isAdmin?' (관리자)':''}`;
+    foundEl.classList.add('show');
+  }else{
+    foundEl.classList.remove('show');
+  }
+});
+
+async function submitPin(){
+  const empNo = document.getElementById('pinInput').value.trim();
+  const errEl = document.getElementById('pinErr');
+  const btn   = document.getElementById('pinBtn');
+  if(!empNo){ errEl.textContent='사번을 입력해주세요.'; return; }
+  if(!/^\d{8}$/.test(empNo)){ errEl.textContent='사번은 숫자 8자리입니다.'; return; }
+
+  btn.disabled = true;
+  document.getElementById('pinBtnText').textContent = '확인 중…';
+  document.getElementById('pinSpinner').style.display = 'inline-block';
+  errEl.textContent = '';
+
+  if(IS_DEMO){
+    // 데모: AUTH_DATA.salt + 입력 사번으로 해시 계산 후 empHash 비교
+    const demoHash = await sha256hex(`${AUTH_DATA.salt}:${empNo}`);
+    const u = AUTH_DATA.users?.find(u => (u.hash||u.empHash) === demoHash);
+    btn.disabled = false;
+    document.getElementById('pinBtnText').textContent = '확인';
+    document.getElementById('pinSpinner').style.display = 'none';
+    if(u){
+      _onAuthSuccess({
+        ok: true,
+        name: u.name, rank: u.rank, isAdmin: u.isAdmin,
+        userList: AUTH_DATA.users.map(x=>({name:x.name, rank:x.rank, isAdmin:x.isAdmin}))
+      });
+    }else{
+      errEl.textContent = '등록되지 않은 사번입니다.';
+      document.getElementById('pinInput').classList.add('err');
+      setTimeout(()=>document.getElementById('pinInput').classList.remove('err'), 400);
+    }
+    return;
+  }
+
+  // ── Step 1: 팀 공통 SALT 요청 ─────────────────────────
+  // Flow가 Initialize Variable에 저장된 SALT를 반환
+  // auth.json 조회 불필요 — SALT는 Flow 내부에만 존재
+  const saltRes = await flowRead({action:'get-salt'});
+  if(!saltRes?.salt){
+    btn.disabled=false;
+    document.getElementById('pinBtnText').textContent='확인';
+    document.getElementById('pinSpinner').style.display='none';
+    errEl.textContent='서버에 연결할 수 없습니다. Flow URL을 확인해주세요.';
+    return;
+  }
+
+  // ── Step 2: 브라우저에서 SHA-256("{SALT}:{empNo}") ────
+  document.getElementById('authHashProgress').classList.add('show');
+  let empHash;
+  try{
+    empHash = await sha256hex(`${saltRes.salt}:${empNo}`);
+  }catch(e){
+    btn.disabled=false;
+    document.getElementById('pinBtnText').textContent='확인';
+    document.getElementById('pinSpinner').style.display='none';
+    document.getElementById('authHashProgress').classList.remove('show');
+    errEl.textContent='브라우저 암호화 기능을 사용할 수 없습니다.';
+    return;
+  }
+  document.getElementById('authHashProgress').classList.remove('show');
+
+  // ── Step 3: empHash로 인증 (사번 평문 미전송) ──────────
+  // Flow: auth.json의 empHash 필드와 비교
+  const result = await flowRead({action:'verify-empno', hash: empHash});
+  btn.disabled=false;
+  document.getElementById('pinBtnText').textContent='확인';
+  document.getElementById('pinSpinner').style.display='none';
+
+  if(!result){
+    errEl.textContent='서버에 연결할 수 없습니다.';
+    return;
+  }
+  if(!result.ok){
+    errEl.textContent='등록되지 않은 사번입니다.';
+    document.getElementById('pinInput').classList.add('err');
+    setTimeout(()=>document.getElementById('pinInput').classList.remove('err'), 400);
+    return;
+  }
+  _onAuthSuccess(result);
+}
+
+function _onAuthSuccess(result){
+  CUR_USER = {
+    name:        result.name,
+    rank:        result.rank,
+    isAdmin:     result.isAdmin === true || String(result.isAdmin).toLowerCase() === 'true',
+    displayName: `${result.name} ${result.rank}`,
+  };
+  // userList: 이름/직위/isAdmin만 포함 (empHash 미포함) — 관리자 패널용
+  if(result.userList) AUTH_DATA._userList = result.userList;
+  saveSession(CUR_USER);
+  applyUserUI();
+  document.getElementById('pinWall').style.display='none';
+
+  if(_pendingPromptId === '__ADD__'){
+    _pendingPromptId = null;
+    navigate('add');
+  }else if(_pendingPromptId){
+    const id = _pendingPromptId; _pendingPromptId = null;
+    openModal(id);
+  }
+}
+
+function applyUserUI(){
+  if(!CUR_USER) return;
+  const hUser = document.getElementById('hUser');
+  hUser.style.display = 'flex';
+  document.getElementById('hUserLabel').textContent = CUR_USER.displayName || `${CUR_USER.name} ${CUR_USER.rank}`;
+  document.getElementById('hAvatar').textContent    = (CUR_USER.name||'?')[0];
+  if(CUR_USER.isAdmin){
+    ['sb-adiv','sb-albl','sb-aitem'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='';});
+  }
+}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑦ 관리자 패널
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+function openAdmin(){
+  if(!CUR_USER?.isAdmin){toast('관리자만 접근 가능합니다');return;}
+  ADMIN_DRAFT=AUTH_DATA.users.map(u=>({...u}));
+  renderUserList();
+  document.getElementById('adminPanel').classList.add('open');
+}
+function closeAdmin(){document.getElementById('adminPanel').classList.remove('open');}
+
+function renderUserList(){
+  document.getElementById('userList').innerHTML = ADMIN_DRAFT.length
+    ? ADMIN_DRAFT.map((u,i)=>`
+      <div class="user-row">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600">${u.name||'(이름없음)'} ${u.rank||''}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${u.isAdmin?'관리자':'일반'} · 사번 등록됨</div>
+        </div>
+        <span class="role-badge role-${u.isAdmin?'admin':'user'}">${u.isAdmin?'관리자':'일반'}</span>
+        <button class="del-btn" onclick="removeUser(${i})" title="삭제">✕</button>
+      </div>`).join('')
+    : '<div style="font-size:13px;color:var(--text-muted);padding:8px 0">등록된 사용자가 없습니다</div>';
+}
+
+async function addUser(){
+  const empNo  = document.getElementById('newEmpId').value.trim();
+  const name   = document.getElementById('newName').value.trim();
+  const rank   = document.getElementById('newRank').value.trim();
+  const isAdmin= document.getElementById('newRole').value === 'admin';
+  if(!empNo||!name){ toast('사번과 성명은 필수입니다'); return; }
+  if(!/^\d{8}$/.test(empNo)){ toast('사번은 숫자 8자리입니다'); return; }
+
+  if(IS_DEMO){
+    // 데모: 팀 SALT('demo')로 해시 생성, auth.json 구조대로 저장
+    const h = await sha256hex(`${AUTH_DATA.salt}:${empNo}`);
+    if(ADMIN_DRAFT.find(u=>(u.hash||u.empHash)===h)){ toast('이미 등록된 사번입니다'); return; }
+    ADMIN_DRAFT.push({hash:h, name, rank, isAdmin});
+    ['newEmpId','newName','newRank'].forEach(id=>{ document.getElementById(id).value=''; });
+    renderUserList();
+    toast(`${name} ${rank} 추가됨 (저장 전)`);
+    return;
+  }
+
+  // 실제: 브라우저에서 팀 SALT를 받아 SHA-256("SALT:사번") hex를 생성 후 auth.json에 저장
+// (auth.json은 두 시스템이 동일하므로 hash 포맷을 hex로 통일)
+const btn = document.querySelector('#adminPanel .panel-footer .btn-primary');
+if(btn) btn.disabled=true;
+toast('사번 해시 생성 중…');
+try{
+  const saltRes = await flowRead({action:'get-salt'});
+  if(!saltRes?.salt) throw new Error('SALT 조회 실패');
+  const h = await sha256hex(`${saltRes.salt}:${empNo}`);
+  if(ADMIN_DRAFT.find(x => (x.hash||x.empHash) === h)){ toast('이미 등록된 사번입니다'); return; }
+  ADMIN_DRAFT.push({hash:h, name, rank, isAdmin});
+  ['newEmpId','newName','newRank'].forEach(id=>{ document.getElementById(id).value=''; });
+  renderUserList();
+  toast(`${name} ${rank} 추가됨 (저장 전)`);
+}catch(e){
+  toast('⚠️ 해시 생성 실패: '+e.message);
+}finally{
+  if(btn) btn.disabled=false;
+}
+}
+
+
+function removeUser(i){ ADMIN_DRAFT.splice(i,1); renderUserList(); }
+
+async function saveAuth(){
+  AUTH_DATA.users = [...ADMIN_DRAFT];
+  SS.set(SK.AUTH, AUTH_DATA);
+  closeAdmin();
+  if(IS_DEMO){ toast('✅ 사용자 목록 업데이트 (데모: 실제 저장 안 됨)'); return; }
+  try{
+    await flowWrite({action:'save-json', path: pathOf.auth(), content: AUTH_DATA});
+    toast('✅ 접근 권한 목록이 저장되었습니다');
+  }catch(e){ toast('⚠️ 저장 실패: '+e.message); }
+}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑧ 앱 데이터 로드
+  전략:
+  1. sessionStorage에 파일 목록 캐시 있으면 즉시 복원 후 렌더
+  2. 없으면 listFiles → 파일 목록 수신 → 모든 JSON 병렬 fetch
+  3. 연도 탭 클릭 → lazy fetch (메모리 → 세션 순 확인)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+async function loadAppData(){
+  if(IS_DEMO){loadDemoData();renderAll();setSyncState('ok','데모 모드');return;}
+
+  // ── Step 1: sessionStorage에서 즉시 복원 ──────────
+  const cachedFiles = SS.get(SK.FILES);
+  if(cachedFiles && cachedFiles.length){
+    cachedFiles.forEach(fname=>{
+      const m=fname.match(/^prompts-(\d{4})\.json$/);
+      const e=fname.match(/^effects-(\d{4})\.json$/);
+      if(m){ const c=SS.get(SK.YEAR(+m[1])); if(c) YEAR_CACHE[+m[1]]=c; }
+      if(e){ const c=SS.get(SK.EFF(+e[1]));  if(c) EFF_CACHE[+e[1]]=c;  }
+    });
+    if(Object.keys(YEAR_CACHE).length){
+      renderAll();
+      setSyncState('ok','세션 캐시 ✓');
+      return;
+    }
+  }
+
+  // ── Step 2: listFiles → 전체 병렬 fetch ───────────
+  document.getElementById('cardGrid').innerHTML=renderSkeletons(6);
+  setSyncState('loading','파일 목록 조회 중…');
+
+  try{
+    const fileList = await flowRead({ action:'list-files', folder: CONFIG.SP_FOLDER });
+    // ✅ list-files 응답 정규화 (객체 배열 → 문자열 배열)
+    const filesRaw = Array.isArray(fileList)
+      ? fileList
+      : (fileList?.files || fileList?.value || []);
+
+    const files = filesRaw
+      .map(f => (typeof f === 'string' ? f : f?.Name))
+      .filter(Boolean);
+
+    const promptFiles = files.filter(f=>(/^prompts-\d{4}\.json$/).test(f));
+    const effectFiles = files.filter(f=>(/^effects-\d{4}\.json$/).test(f));
+
+    if(!promptFiles.length){
+      setSyncState('err','프롬프트 파일 없음');
+      document.getElementById('cardGrid').innerHTML='';
+      document.getElementById('emptyState').style.display='block';
+      return;
+    }
+
+    setSyncState('loading',`JSON ${promptFiles.length}개 로딩 중…`);
+
+    // 모든 prompts-*.json 병렬 fetch
+    await Promise.all(
+      promptFiles.map(fname=>{
+        const y=+fname.match(/(\d{4})/)[1];
+        return flowRead({action:'read-json', path: `${CONFIG.SP_FOLDER}/${fname}`})
+          .then(d=>{ YEAR_CACHE[y]=d; SS.set(SK.YEAR(y),d); })
+          .catch(e=>console.warn(`[LOAD] ${fname}`,e));
+      })
+    );
+
+    // effects-*.json 병렬 fetch (백그라운드)
+    Promise.all(
+      effectFiles.map(fname=>{
+        const y=+fname.match(/(\d{4})/)[1];
+        return flowRead({action:'read-json', path: `${CONFIG.SP_FOLDER}/${fname}`})
+          .then(d=>{ EFF_CACHE[y]=d.records||[]; SS.set(SK.EFF(y),EFF_CACHE[y]); })
+          .catch(()=>{});
+      })
+    );
+
+    renderAll();
+    setSyncState('ok',`${promptFiles.length}개 파일 로드 완료 ✓`);
+  }catch(e){
+    setSyncState('err','로딩 실패');
+    document.getElementById('cardGrid').innerHTML='';
+    document.getElementById('emptyState').style.display='block';
+    document.getElementById('emptyState').innerHTML=
+      `<div class="empty-ico">⚠️</div><div class="empty-txt">데이터를 불러오지 못했습니다</div><div style="font-size:12px">${e.message}</div>`;
+    console.error('[LOAD]',e);
+  }
+}
+
+// 연도 탭 클릭 시 lazy fetch
+async function lazyLoadYear(y){
+  if(YEAR_CACHE[y]) return;
+  const c=SS.get(SK.YEAR(y));
+  if(c){ YEAR_CACHE[y]=c; return; }
+  setSyncState('loading',`${y}년 로딩 중…`);
+  try{
+    const [pd, ed] = await Promise.all([
+      flowRead({action:'read-json', path: pathOf.prompts(y)}),
+      flowRead({action:'read-json', path: pathOf.effects(y)}).catch(()=>({records:[]})),
+    ]);
+    YEAR_CACHE[y]=pd; SS.set(SK.YEAR(y),pd);
+    EFF_CACHE[y]=ed.records||[]; SS.set(SK.EFF(y),EFF_CACHE[y]);
+    setSyncState('ok','동기화 완료 ✓');
+  }catch(e){
+    setSyncState('err','로딩 실패');
+    toast(`⚠️ ${y}년 데이터 로딩 실패`);
+  }
+}
+
+function renderAll(){ renderYearTabs(); renderCards(); updateStats(); }
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑨ 데모 데이터
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+function loadDemoData(){
+  const Y=new Date().getFullYear(), P=Y-1;
+  // 데모용 AUTH_DATA — empHash 기반 (구조: {empHash, name, rank, isAdmin})
+  // loadAuth()에서 실제 AUTH_DATA 세팅 (sha256hex 비동기), 여기선 빈 배열로 초기화
+  // boot()에서 loadAuth() → loadDemoData() 순서로 호출하므로 AUTH_DATA는 loadAuth()가 담당
+  YEAR_CACHE[P]={year:P,prompts:[
+    mk(P,`${P}-1`,'데이터 분석 인사이트 도출','DAT-ANL-L3','ANL','L3',
+      `당신은 데이터 분석 전문가입니다.\n\n출력 형식:\n1. 핵심 발견\n2. 상세 분석\n3. 인사이트 및 권고사항\n4. 데이터 한계\n\n[분석할 데이터 입력]`,
+      '비정형 데이터 인사이트 추출','[데이터], [분석 목적]','매우 좋음',38,
+      '박성민 책임',['데이터','분석'],
+      [{ver:'v2.0',date:`${P}-10-10`,change:'체이닝 구조로 개편',reason:'품질 향상'}]),
+    mk(P,`${P}-2`,'문서 톤앤매너 교정','DOC-EDI-L1','EDI','L1',
+      `아래 문서를 [목적]에 맞게 톤을 조정해주세요.\n\n톤 옵션: 공식적 / 친근한 / 간결한 / 설득력 있는\n\n[원본 문서]`,
+      '문서 발송 전 톤 조정','[원본 문서], [목적 톤]','좋음',29,
+      '이수아 선임',['편집','교정'],
+      [{ver:'v1.0',date:`${P}-08-15`,change:'최초 작성',reason:'-'}])
+  ]};
+  YEAR_CACHE[Y]={year:Y,prompts:[
+    mk(Y,`${Y}-1`,'회의록 자동 요약','RPT-GEN-L2','GEN','L2',
+      `당신은 숙련된 비즈니스 애널리스트입니다.\n아래 회의 내용을 정리해주세요.\n\n## 핵심 결정사항\n## 액션 아이템\n| 담당자 | 할 일 | 기한 |\n## 다음 회의 안건\n\n[회의 내용]`,
+      '회의 직후 회의록 작성 시','[회의 내용 전문]','매우 좋음',47,
+      '홍길동 책임',['보고서','요약','회의'],
+      [{ver:'v1.0',date:`${Y}-01-01`,change:'최초 작성',reason:'-'},{ver:'v1.2',date:`${Y}-01-14`,change:'다음 회의 안건 추가',reason:'피드백 반영'}]),
+    mk(Y,`${Y}-2`,'보고서→발표자료 변환','RPT-TRN-L2','TRN','L2',
+      `보고서를 PPT 발표 스크립트로 변환해주세요.\n\n슬라이드 N:\n- 핵심 메시지:\n- 불릿 포인트:\n- 발표 스크립트:\n\n[원본 보고서]`,
+      '보고서→프레젠테이션 변환','[보고서], [청중], [발표시간]','좋음',22,
+      '김민지 선임',['변환','PPT'],
+      [{ver:'v1.1',date:`${Y}-01-05`,change:'스크립트 항목 추가',reason:'실용성'}]),
+    mk(Y,`${Y}-3`,'팩트체크 및 오류 탐지','DOC-CHK-L2','CHK','L2',
+      `꼼꼼한 팩트체커로서 검토해주세요.\n\n✅ 이상 없음 / ⚠️ 주의 / ❌ 오류\n\n[검토할 문서]`,
+      '외부 발송 전 품질 검토','[문서]','매우 좋음',31,
+      '홍길동 책임',['검증','품질'],
+      [{ver:'v1.0',date:`${Y}-01-12`,change:'최초 작성',reason:'-'}]),
+    mk(Y,`${Y}-4`,'업무 보고서 작성 템플릿','RPT-TPL-L1','TPL','L1',
+      `템플릿으로 보고서를 작성해주세요.\n\n## 1. 개요\n## 2. 주요 내용\n## 3. 결과\n| 지표 | 목표 | 실적 | 달성률 |\n## 4. 이슈\n## 5. 다음 단계\n\n[업무 상황]`,
+      '정기 업무 보고서','[업무명], [기간]','좋음',51,
+      '박서연 팀장',['템플릿','보고서'],
+      [{ver:'v1.0',date:`${Y}-01-01`,change:'최초 작성',reason:'-'}])
+  ]};
+}
+// authorName: 표시용("홍길동 책임") — 권한체크도 authorName(=displayName) 기준
+function mk(year,id,title,code,type,level,prompt,when,inputs,rating,uses,authorName,tags,versions){
+  return {id,year,title,code,type,level,prompt,when,inputs,outputEx:'',memo:'',
+    rating,uses,version:versions[versions.length-1].ver,
+    authorName, tags,
+    modified:versions[versions.length-1].date, versions};
+}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑩ 데이터 헬퍼
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+const allPrompts  = ()=>Object.values(YEAR_CACHE).flatMap(d=>d.prompts||[]);
+const findPrompt  = id=>allPrompts().find(p=>String(p.id)===String(id));
+const knownYears  = ()=>[...new Set(Object.keys(YEAR_CACHE).map(Number))].sort((a,b)=>b-a);
+const effYears    = ()=>[...new Set([...Object.keys(EFF_CACHE).map(Number).filter(y=>(EFF_CACHE[y]?.length||0)>0),new Date().getFullYear()])].sort((a,b)=>b-a);
+const yearEff     = y=>EFF_CACHE[y]||[];
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑪ Year Tabs (프롬프트)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+function renderYearTabs(){
+  const years=knownYears();
+  if(years.length<2){document.getElementById('yearTabsWrap').innerHTML='';return;}
+  const tabs=[`<span class="ytab ${ACTIVE_YEAR==='all'?'active':''}" onclick="setYear('all',this)">전체</span>`,
+    ...years.map(y=>{
+      const cnt = YEAR_CACHE[y]?.prompts?.length||0;
+      return `<span class="ytab ${ACTIVE_YEAR===y?'active':''}" onclick="setYear(${y},this)">${y} <span style="opacity:.6;font-size:10px">(${cnt})</span></span>`;
+    })].join('');
+  document.getElementById('yearTabsWrap').innerHTML=`<div class="year-tabs"><span style="font-size:12px;color:var(--text-muted);font-weight:600;margin-right:4px">연도:</span>${tabs}</div>`;
+}
+
+async function setYear(y,el){
+  document.querySelectorAll('#yearTabsWrap .ytab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  ACTIVE_YEAR=y;
+  if(y!=='all'&&!YEAR_CACHE[y]){
+    document.getElementById('cardGrid').innerHTML=renderSkeletons(3);
+    await lazyLoadYear(y);
+  }
+  renderCards();
+}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑫ Stats
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+function updateStats(){
+  const all=allPrompts();
+  document.getElementById('stat-total').textContent=all.length;
+  document.getElementById('badge-total').textContent=all.length;
+  document.getElementById('stat-uses').textContent=all.reduce((a,p)=>a+(p.uses||0),0);
+  const rated=all.filter(p=>p.rating);
+  document.getElementById('stat-quality').textContent=rated.length?(rated.reduce((a,p)=>a+(RM[p.rating]||0),0)/rated.length).toFixed(1):'-';
+  const ts=new Date().toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('stat-sync').textContent=ts;
+  document.getElementById('stat-src').textContent=IS_DEMO?'🔧 데모 모드':'✅ SharePoint';
+}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑬ 카드 렌더
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+function renderSkeletons(n=6){
+  return Array.from({length:n},()=>`<div class="sk-card"><div class="sk-line skeleton" style="width:60%;height:14px;margin-bottom:10px"></div><div class="sk-line skeleton" style="width:40%;margin-bottom:12px"></div><div class="sk-line skeleton" style="width:100%;margin-bottom:6px"></div><div class="sk-line skeleton" style="width:80%;margin-bottom:16px"></div><div class="sk-line skeleton" style="width:40%;height:10px"></div></div>`).join('');
+}
+
+function cardHTML(p){
+  const tags=(p.tags||[]).slice(0,3).map(t=>`<span class="tag">${t}</span>`).join('');
+  return `<div class="p-card" onclick="openModal('${p.id}')">
+    <div class="card-badges">
+      <span class="badge b${p.type}">${TI[p.type]||''} ${TL[p.type]||p.type}</span>
+      <span class="badge b${p.level}">${p.level} ${LL[p.level]||''}</span>
+      ${p.year?`<span class="badge b-muted">${p.year}</span>`:''}
+    </div>
+    <div class="card-title">${p.title}</div>
+    <div class="card-code">${p.code||''} · ${p.version||'v1.0'}</div>
+    <div class="card-excerpt">${(p.prompt||'').replace(/\n/g,' ')}</div>
+    <div class="card-tags">${tags}</div>
+    <div class="card-footer">
+      <span class="card-author">by <strong>${p.authorName||p.author||'-'}</strong></span>
+      <span class="card-rating">${RS[p.rating]||''}</span>
+      <span class="card-uses">▶ ${p.uses||0}회</span>
+    </div>
+  </div>`;
+}
+
+function renderCards(q){
+  q=(q!==undefined?q:document.getElementById('globalSearch').value||'').toLowerCase().trim();
+  const level=document.getElementById('levelFilter').value;
+  const sort=document.getElementById('sortFilter').value;
+  let data=ACTIVE_YEAR==='all'?allPrompts():[...(YEAR_CACHE[ACTIVE_YEAR]?.prompts||[])];
+  data=[...data];
+  if(TYPE_FILTER) data=data.filter(p=>p.type===TYPE_FILTER);
+  if(level) data=data.filter(p=>p.level===level);
+  if(q) data=data.filter(p=>p.title.toLowerCase().includes(q)||(p.tags||[]).some(t=>t.toLowerCase().includes(q))||(p.code||'').toLowerCase().includes(q)||(p.prompt||'').toLowerCase().includes(q));
+  if(sort==='uses') data.sort((a,b)=>(b.uses||0)-(a.uses||0));
+  else if(sort==='quality') data.sort((a,b)=>(RM[b.rating]||0)-(RM[a.rating]||0));
+  else data.sort((a,b)=>(b.modified||'').localeCompare(a.modified||''));
+  const grid=document.getElementById('cardGrid'), empty=document.getElementById('emptyState');
+  if(!data.length){grid.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none'; grid.innerHTML=data.map(cardHTML).join('');
+}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑭ Navigation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+function navigate(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p)?.classList.add('active');
+  document.getElementById('nav-'+p)?.classList.add('active');
+  if(p==='home'){TYPE_FILTER=null;renderCards();}
+  if(p==='add' && !EDIT_ID){
+    resetAddForm();
+    if(CUR_USER){
+      const nameEl=document.getElementById('f-author');
+      const rankEl=document.getElementById('f-rank');
+      if(nameEl){ nameEl.value=CUR_USER.name||''; nameEl.readOnly=true; }
+      if(rankEl){ rankEl.value=CUR_USER.rank||''; rankEl.disabled=true; }
+    }
+  }
+  if(p==='popular'){const g=document.getElementById('popularGrid');g.innerHTML=[...allPrompts()].sort((a,b)=>(b.uses||0)-(a.uses||0)).map(cardHTML).join('')||emptyHTML();}
+  if(p==='recent'){const g=document.getElementById('recentGrid');g.innerHTML=[...allPrompts()].sort((a,b)=>(b.modified||'').localeCompare(a.modified||'')).map(cardHTML).join('')||emptyHTML();}
+  if(p==='dashboard') renderDashboard();
+  if(p==='metrics') renderMetrics();
+}
+function filterByType(t){navigate('home');TYPE_FILTER=t;document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));renderCards();}
+function setTypeFilter(t,el){TYPE_FILTER=t;document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));if(el)el.classList.add('active');renderCards();}
+function onSearch(v){navigate('home');renderCards(v);}
+const emptyHTML=()=>'<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">데이터가 없습니다</div></div>';
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑮ Modal — 카드 클릭 → PIN 미인증 시 PIN 모달 먼저
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+function openModal(id){
+  // 세션 없으면 PIN 입력 요청
+  if(!CUR_USER){ requestPin(id); return; }
+
+  const p=findPrompt(id); if(!p) return;
+  ACTIVE_MODAL=String(id);
+  document.getElementById('mTitle').textContent=p.title;
+  document.getElementById('mMeta').innerHTML=`
+    <span class="badge b${p.type}">${TI[p.type]||''} ${TL[p.type]||p.type}</span>
+    <span class="badge b${p.level}">${p.level} ${LL[p.level]||''}</span>
+    <span class="badge b-muted">${p.code||''}</span>
+    <span class="badge b-muted">${p.version||'v1.0'}</span>
+    ${p.year?`<span class="badge b-muted">${p.year}년</span>`:''}`;
+  document.getElementById('mPrompt').textContent=p.prompt||'';
+  document.getElementById('mInfoGrid').innerHTML=`
+    <div class="info-item"><label>작성자</label><span>${p.authorName||p.author||'-'}</span></div>
+    <div class="info-item"><label>효과 평가</label><span>${RS[p.rating]||''} ${p.rating||'-'}</span></div>
+    <div class="info-item"><label>사용 횟수</label><span>${p.uses||0}회</span></div>
+    <div class="info-item"><label>최종 수정일</label><span>${p.modified||'-'}</span></div>
+    <div class="info-item"><label>태그</label><span>${(p.tags||[]).join(', ')||'-'}</span></div>
+    <div class="info-item"><label>메모</label><span style="font-size:12px">${p.memo||'-'}</span></div>`;
+  document.getElementById('mGuide').innerHTML=`
+    <p><strong>📅 언제 사용:</strong> ${p.when||'-'}</p>
+    <p><strong>📝 필수 입력:</strong> ${p.inputs||'-'}</p>
+    ${p.outputEx?`<p style="margin-top:8px"><strong>💡 출력 예시:</strong></p><pre style="background:var(--bg-muted);padding:8px;border-radius:6px;font-size:11px;white-space:pre-wrap;margin-top:4px;font-family:monospace">${p.outputEx}</pre>`:''}`;
+  document.getElementById('mVersionBody').innerHTML=(p.versions||[]).map(v=>`<tr><td><span class="ver-chip">${v.ver}</span></td><td>${v.date}</td><td>${v.change}</td><td>${v.reason}</td></tr>`).join('');
+
+  // ── 수정/삭제 버튼: 작성자(authorName === displayName) 또는 관리자만 ──
+  const isOwner = CUR_USER && p.authorName && p.authorName === CUR_USER.displayName;
+  const isAdmin = CUR_USER?.isAdmin === true;
+  const canAct  = isOwner || isAdmin;
+  document.getElementById('delBtn').style.display  = canAct ? '' : 'none';
+  document.getElementById('editBtn').style.display = canAct ? '' : 'none';
+
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); ACTIVE_MODAL=null; }
+function copyPrompt(){ const p=findPrompt(ACTIVE_MODAL); if(!p) return; navigator.clipboard.writeText(p.prompt||'').then(()=>toast('프롬프트가 클립보드에 복사되었습니다 ✅')); }
+function exportMD(){ const p=findPrompt(ACTIVE_MODAL); if(!p) return; downloadFile(`${p.title}.md`,generateMD(p),'text/markdown'); toast('MD 파일로 내보냈습니다 📥'); }
+
+async function incrementUse(){
+  const p=findPrompt(ACTIVE_MODAL); if(!p) return;
+  p.uses=(p.uses||0)+1;
+  SS.set(SK.YEAR(p.year), YEAR_CACHE[p.year]);
+  toast(`사용 완료 기록 (총 ${p.uses}회)`);
+  renderCards(); updateStats();
+  if(!IS_DEMO)
+    flowWrite({action:'save-json', path:pathOf.prompts(p.year), content:YEAR_CACHE[p.year]}).catch(e=>console.warn('[incrementUse]',e));
+}
+
+async function deletePrompt(){
+  const p=findPrompt(ACTIVE_MODAL); if(!p) return;
+  const isOwner = CUR_USER && p.authorName && p.authorName === CUR_USER.displayName;
+  const isAdmin = CUR_USER?.isAdmin===true;
+  if(!isOwner && !isAdmin){ toast('삭제 권한이 없습니다 (작성자 또는 관리자만 가능)'); return; }
+  if(!confirm(`"${p.title}" 프롬프트를 삭제하시겠습니까?`)) return;
+
+  const yc=YEAR_CACHE[p.year];
+  if(yc) yc.prompts=yc.prompts.filter(x=>String(x.id)!==String(p.id));
+  SS.set(SK.YEAR(p.year), YEAR_CACHE[p.year]);
+  closeModal(); renderCards(); updateStats();
+  toast('프롬프트가 삭제되었습니다');
+  if(!IS_DEMO)
+    flowWrite({action:'save-json', path:pathOf.prompts(p.year), content:YEAR_CACHE[p.year]})
+      .catch(()=>toast('⚠️ SharePoint 삭제 실패'));
+}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑯ 수정 모드 (모달 → 등록 폼 연결)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+function openEditMode(){
+  const p=findPrompt(ACTIVE_MODAL); if(!p) return;
+  const isOwner = CUR_USER && p.authorName && p.authorName === CUR_USER.displayName;
+  const isAdmin = CUR_USER?.isAdmin===true;
+  if(!isOwner && !isAdmin){ toast('수정 권한이 없습니다 (작성자 또는 관리자만 가능)'); return; }
+
+  EDIT_ID = String(p.id);
+  closeModal();
+
+  document.getElementById('addPageTitle').textContent = '✏️ 프롬프트 수정';
+  document.getElementById('addPageSub').textContent   = `"${p.title}" 을 수정합니다`;
+  document.getElementById('saveBtn').textContent      = '💾 수정 저장';
+
+  const sv = (id, val) => { const el=document.getElementById(id); if(el) el.value=val||''; };
+  sv('f-title',   p.title);
+  // 작성자: authorName에서 성명/직위 분리 (예: "홍길동 책임" → name="홍길동", rank="책임")
+  const parts = (p.authorName||p.author||'').split(' ');
+  const RANKS = ['사원','선임','책임','팀장'];
+  const rankPart = parts.find(w=>RANKS.includes(w)) || CUR_USER?.rank || '';
+  const namePart = parts.filter(w=>!RANKS.includes(w)).join(' ') || CUR_USER?.name || '';
+  const nameEl=document.getElementById('f-author'); if(nameEl){ nameEl.value=namePart; nameEl.readOnly=true; }
+  const rankEl=document.getElementById('f-rank');   if(rankEl){ rankEl.value=rankPart; rankEl.disabled=true; }
+  sv('f-version', p.version||'v1.0');
+  sv('f-tags',    (p.tags||[]).join(', '));
+  sv('f-when',    p.when);
+  sv('f-inputs',  p.inputs);
+  sv('f-memo',    p.memo);
+  sv('f-output-ex', p.outputEx);
+  sv('f-prompt',  p.prompt);
+  // select 세팅
+  const ss = (id, val) => { const el=document.getElementById(id); if(el&&val) el.value=val; };
+  ss('f-type',   p.type);
+  ss('f-level',  p.level);
+  ss('f-rating', p.rating);
+
+  // MD 업로드 영역은 수정 시에도 사용 가능하도록 유지
+  resetMdUpload();
+  navigate('add');
+}
+
+function cancelEdit(){
+  EDIT_ID = null;
+  resetAddForm();
+  navigate('home');
+}
+
+function resetAddForm(){
+  document.getElementById('addPageTitle').textContent = '➕ 새 프롬프트 등록';
+  document.getElementById('addPageSub').textContent   = '새로운 프롬프트를 라이브러리에 추가합니다';
+  document.getElementById('saveBtn').textContent      = '💾 라이브러리에 저장';
+  ['f-title','f-tags','f-when','f-inputs','f-memo','f-output-ex','f-prompt'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  // 작성자/직위는 readonly — 세션 있으면 유지, 없으면 비움
+  const nameEl=document.getElementById('f-author');
+  const rankEl=document.getElementById('f-rank');
+  if(nameEl){ nameEl.value=CUR_USER?.name||''; nameEl.readOnly=!!CUR_USER; }
+  if(rankEl){ rankEl.value=CUR_USER?.rank||''; rankEl.disabled=!!CUR_USER; }
+  document.getElementById('f-version').value='v1.0';
+  const fs=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  fs('f-type',''); fs('f-level',''); fs('f-rating','좋음');
+  resetMdUpload();
+}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑰ MD 파서 (업로드 → 폼 자동 채우기)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  파싱 규칙 (MD 템플릿 형식):
+  # 제목             → title
+  코드: `XXX`        → code (참고용, 폼에는 type/level로 분리)
+  버전: vX.X         → version
+  작성자: 이름       → author
+  ## 프롬프트 본문   → 다음 ``` 블록 내용 → prompt
+  ### 출력 예시      → outputEx (코드블록 또는 일반 텍스트)
+  언제 사용:         → when
+  필수 입력:         → inputs
+  주의사항:          → memo
+  ## 버전 이력       → versions 배열 (| v1.x | 날짜 | 변경 | 사유 |)
+  태그행             → tags (쉼표 구분 텍스트 → 자동 감지)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+function parseMD(text){
+  const lines = text.split('\n');
+  const result = {
+    title:'', code:'', type:'', level:'', version:'v1.0',
+    author:'', tags:[], prompt:'', when:'', inputs:'', memo:'',
+    outputEx:'', versions:[]
+  };
+
+  // ── 제목 ──
+  const titleLine = lines.find(l=>/^#\s+/.test(l));
+  if(titleLine) result.title = titleLine.replace(/^#\s+/,'').trim();
+
+  // ── 메타 라인 (코드: `XXX` | 버전: vX.X | 작성자: 이름) ──
+  const metaLine = lines.find(l=>/코드.*버전|버전.*코드/i.test(l) || /^코드:/i.test(l));
+  if(metaLine){
+    const codeM   = metaLine.match(/코드[:\s]+[`]?([A-Z0-9\-]+)[`]?/i);
+    const verM    = metaLine.match(/버전[:\s]+([vV][\d.]+)/i);
+    const authorM = metaLine.match(/작성자[:\s]+([^\|]+)/i);
+    if(codeM)   result.code    = codeM[1].trim();
+    if(verM)    result.version = verM[1].trim();
+    if(authorM) result.author  = authorM[1].trim();
+  }
+
+  // ── 코드에서 type / level 추출 ── (예: RPT-GEN-L2 → GEN, L2)
+  if(result.code){
+    const typeM  = result.code.match(/\b(GEN|ANL|EDI|TRN|CHK|TPL)\b/i);
+    const levelM = result.code.match(/\b(L[123])\b/i);
+    if(typeM)  result.type  = typeM[1].toUpperCase();
+    if(levelM) result.level = levelM[1].toUpperCase();
+  }
+
+  // ── 프롬프트 본문 섹션 내 코드블록 ──
+  const promptSecIdx = lines.findIndex(l=>/^##\s+프롬프트\s*본문/i.test(l));
+  if(promptSecIdx !== -1){
+    // 다음 ## 섹션 전까지
+    const nextSecIdx = lines.findIndex((l,i)=>i>promptSecIdx && /^##\s+/.test(l));
+    const secLines   = lines.slice(promptSecIdx+1, nextSecIdx===-1?undefined:nextSecIdx);
+    const cbStart    = secLines.findIndex(l=>/^```/.test(l));
+    const cbEnd      = secLines.findIndex((l,i)=>i>cbStart && /^```/.test(l));
+    if(cbStart!==-1 && cbEnd!==-1){
+      result.prompt = secLines.slice(cbStart+1, cbEnd).join('\n').trim();
+    } else {
+      // 코드블록 없으면 섹션 전체 (헤더·빈줄 제외)
+      result.prompt = secLines.filter(l=>l.trim()&&!/^```/.test(l)).join('\n').trim();
+    }
+  }
+
+  // ── 사용 가이드 섹션 ──
+  const guideSecIdx = lines.findIndex(l=>/^##\s+사용\s*가이드/i.test(l));
+  if(guideSecIdx !== -1){
+    const nextSecIdx = lines.findIndex((l,i)=>i>guideSecIdx && /^##\s+/.test(l));
+    const secLines   = lines.slice(guideSecIdx+1, nextSecIdx===-1?undefined:nextSecIdx);
+    secLines.forEach(l=>{
+      const wm  = l.match(/언제\s*사용[:\s*]+(.+)/i);
+      const im  = l.match(/필수\s*입력[:\s*]+(.+)/i);
+      const mm  = l.match(/주의사항[:\s*]+(.+)/i);
+      if(wm) result.when   = wm[1].replace(/^\*+|\*+$/g,'').trim();
+      if(im) result.inputs = im[1].replace(/^\*+|\*+$/g,'').trim();
+      if(mm) result.memo   = mm[1].replace(/^\*+|\*+$/g,'').trim();
+    });
+
+    // 출력 예시: ### 출력 예시 하위 블록
+    const outIdx = secLines.findIndex(l=>/^###\s+출력\s*예시/i.test(l));
+    if(outIdx !== -1){
+      const outLines = secLines.slice(outIdx+1);
+      const cbS = outLines.findIndex(l=>/^```/.test(l));
+      const cbE = outLines.findIndex((l,i)=>i>cbS && /^```/.test(l));
+      if(cbS!==-1 && cbE!==-1){
+        result.outputEx = outLines.slice(cbS+1,cbE).join('\n').trim();
+      } else {
+        result.outputEx = outLines.filter(l=>l.trim()&&!/^###/.test(l)).join('\n').trim();
+      }
+    }
+  }
+
+  // ── 버전 이력 테이블 ──
+  const verSecIdx = lines.findIndex(l=>/^##\s+버전\s*이력/i.test(l));
+  if(verSecIdx !== -1){
+    lines.slice(verSecIdx+1).forEach(l=>{
+      // | v1.0 | 날짜 | 변경 | 사유 |
+      const m = l.match(/\|\s*(v[\d.]+)\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|/i);
+      if(m && !/버전|날짜|변경|version/i.test(m[1])){
+        result.versions.push({
+          ver:    m[1].trim(),
+          date:   m[2].trim(),
+          change: m[3].trim(),
+          reason: m[4].trim()
+        });
+      }
+    });
+  }
+
+  // ── 태그 감지 (태그: 혹은 Tags: 라인) ──
+  const tagLine = lines.find(l=>/^[태|T]ag[s]?[:\s]/i.test(l) || /태그[:\s]+/i.test(l));
+  if(tagLine){
+    const tagPart = tagLine.replace(/^.*?[:\s]+/,'').trim();
+    result.tags = tagPart.split(/[,，、]/).map(t=>t.replace(/[`*]/g,'').trim()).filter(Boolean);
+  }
+
+  return result;
+}
+
+function applyParsedMD(parsed, filename){
+  const sv=(id,v)=>{ const el=document.getElementById(id); if(el&&v!==undefined) el.value=v; };
+  const ss=(id,v)=>{ const el=document.getElementById(id); if(el&&v) el.value=v; };
+
+  if(parsed.title)   sv('f-title',   parsed.title);
+  if(parsed.version) sv('f-version', parsed.version);
+  if(parsed.author)  sv('f-author',  parsed.author);
+  if(parsed.tags.length) sv('f-tags', parsed.tags.join(', '));
+  if(parsed.prompt)  sv('f-prompt',  parsed.prompt);
+  if(parsed.when)    sv('f-when',    parsed.when);
+  if(parsed.inputs)  sv('f-inputs',  parsed.inputs);
+  if(parsed.memo)    sv('f-memo',    parsed.memo);
+  if(parsed.outputEx)sv('f-output-ex',parsed.outputEx);
+  if(parsed.type)    ss('f-type',    parsed.type);
+  if(parsed.level)   ss('f-level',   parsed.level);
+
+  // 파싱 결과 요약
+  const filled = [
+    parsed.title     && '제목',
+    parsed.type      && '용도',
+    parsed.level     && '난이도',
+    parsed.version   && '버전',
+    parsed.author    && '작성자',
+    parsed.prompt    && '본문',
+    parsed.when      && '사용시점',
+    parsed.inputs    && '필수입력',
+    parsed.memo      && '주의사항',
+    parsed.outputEx  && '출력예시',
+    parsed.tags.length && '태그',
+  ].filter(Boolean);
+
+  const resultEl = document.getElementById('mdParseResult');
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = `
+    <div class="md-parse-ok">
+      <span>✅</span>
+      <span><strong>${filename}</strong> 파싱 완료 —
+        ${filled.map(f=>`<span class="md-parse-field">${f}</span>`).join(' ')} 반영됨</span>
+    </div>`;
+
+  // 파싱된 버전 이력이 있으면 저장 시 활용을 위해 임시 보관
+  if(parsed.versions.length) window._mdVersions = parsed.versions;
+  else window._mdVersions = null;
+}
+
+// MD 드롭존 이벤트
+function mdDragOver(e){ e.preventDefault(); document.getElementById('mdDropZone').classList.add('md-drop-active'); }
+function mdDragLeave(){ document.getElementById('mdDropZone').classList.remove('md-drop-active'); }
+function mdDrop(e){
+  e.preventDefault();
+  document.getElementById('mdDropZone').classList.remove('md-drop-active');
+  const file = e.dataTransfer.files[0];
+  if(file) readMdFile(file);
+}
+function mdFileSelected(e){ const file=e.target.files[0]; if(file) readMdFile(file); }
+function readMdFile(file){
+  if(!file.name.endsWith('.md') && file.type!=='text/markdown'){
+    const r=document.getElementById('mdParseResult');
+    r.style.display='block';
+    r.innerHTML='<div class="md-parse-err"><span>⚠️</span><span>.md 파일만 지원합니다</span></div>';
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=e=>{ applyParsedMD(parseMD(e.target.result), file.name); };
+  reader.readAsText(file,'UTF-8');
+}
+function resetMdUpload(){
+  document.getElementById('mdParseResult').style.display='none';
+  document.getElementById('mdFileInput').value='';
+  window._mdVersions=null;
+}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑱ 저장 (신규 + 수정 통합, 낙관적 UI)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+async function savePrompt(){
+  const title  = document.getElementById('f-title').value.trim();
+  const type   = document.getElementById('f-type').value;
+  const level  = document.getElementById('f-level').value;
+  const prompt = document.getElementById('f-prompt').value.trim();
+  if(!title||!type||!level||!prompt){ toast('⚠️ 필수 항목을 모두 입력해주세요 (이름·용도·난이도·본문)'); return; }
+  if(!CUR_USER){ toast('⚠️ 사번 인증 후 저장할 수 있습니다'); return; }
+
+  const today      = new Date().toISOString().slice(0,10);
+  const ver        = document.getElementById('f-version').value.trim()||'v1.0';
+  // 작성자 표시명: 세션 기준 "성명 직위" (readonly 필드에서 읽음)
+  const authorName = [
+    document.getElementById('f-author').value.trim() || CUR_USER.name || '',
+    document.getElementById('f-rank').value || CUR_USER.rank || '',
+  ].filter(Boolean).join(' ');
+  const tags       = document.getElementById('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+
+  if(EDIT_ID){
+    // ── 수정 모드 ────────────────────────────────
+    const orig = findPrompt(EDIT_ID);
+    if(!orig){ toast('⚠️ 수정할 프롬프트를 찾을 수 없습니다'); return; }
+
+    const newVersions = [...(orig.versions||[])];
+    if(ver !== orig.version){
+      newVersions.push({ver, date:today, change:'버전 업데이트', reason:'-'});
+    }
+    if(window._mdVersions){
+      window._mdVersions.forEach(mv=>{
+        if(!newVersions.find(v=>v.ver===mv.ver)) newVersions.push(mv);
+      });
+      newVersions.sort((a,b)=>a.ver.localeCompare(b.ver));
+    }
+
+    Object.assign(orig,{
+      title, type, level, prompt, version:ver,
+      authorName, tags,
+      when:    document.getElementById('f-when').value.trim(),
+      inputs:  document.getElementById('f-inputs').value.trim(),
+      outputEx:document.getElementById('f-output-ex').value.trim(),
+      memo:    document.getElementById('f-memo').value.trim(),
+      rating:  document.getElementById('f-rating').value,
+      modified:today, versions:newVersions,
+      code:    `${type}-${level}`,
+    });
+
+    SS.set(SK.YEAR(orig.year), YEAR_CACHE[orig.year]);
+    EDIT_ID = null;
+    resetAddForm();
+    navigate('home'); renderYearTabs(); renderCards(); updateStats();
+    toast('✅ 프롬프트가 수정되었습니다!');
+
+    if(!IS_DEMO){
+      const st=document.getElementById('saveStatus');
+      if(st) st.textContent='SharePoint에 동기화 중…';
+      try{
+        await flowWrite({action:'save-json', path:pathOf.prompts(orig.year), content:YEAR_CACHE[orig.year]});
+        if(st) st.textContent='';
+      }catch(e){
+        toast('⚠️ SharePoint 동기화 실패 — 세션 내 임시 저장됨');
+        if(st) st.textContent='동기화 실패';
+      }
+    }
+
+  } else {
+    // ── 신규 등록 ────────────────────────────────
+    const Y        = new Date().getFullYear();
+    const versions = window._mdVersions || [{ver,date:today,change:'최초 작성',reason:'-'}];
+
+    const newP = {
+      id:`${Y}-${Date.now()}`, year:Y, title,
+      code:`${type}-${level}`, type, level, prompt,
+      when:    document.getElementById('f-when').value.trim(),
+      inputs:  document.getElementById('f-inputs').value.trim(),
+      outputEx:document.getElementById('f-output-ex').value.trim(),
+      memo:    document.getElementById('f-memo').value.trim(),
+      rating:  document.getElementById('f-rating').value,
+      uses:0, version:ver,
+      authorName, tags,
+      modified:today, versions,
+    };
+
+    if(!YEAR_CACHE[Y]) YEAR_CACHE[Y]={year:Y,prompts:[]};
+    YEAR_CACHE[Y].prompts.unshift(newP);
+    SS.set(SK.YEAR(Y), YEAR_CACHE[Y]);
+
+    const files = SS.get(SK.FILES)||[];
+    const fname = pathOf.prompts(Y);
+    if(!files.includes(fname)){ files.push(fname); SS.set(SK.FILES,files); }
+
+    resetAddForm();
+    navigate('home'); renderYearTabs(); renderCards(); updateStats();
+    toast('✅ 라이브러리에 저장되었습니다!');
+
+    if(!IS_DEMO){
+      const st=document.getElementById('saveStatus');
+      if(st) st.textContent='SharePoint에 동기화 중…';
+      try{
+        await flowWrite({action:'save-json', path: pathOf.prompts(Y), content: YEAR_CACHE[Y]});
+        if(st) st.textContent='';
+      }catch(e){
+        toast('⚠️ SharePoint 동기화 실패 — 세션 내 임시 저장됨');
+        if(st) st.textContent='동기화 실패';
+      }
+    }
+  }
+}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑱ Dashboard
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+function renderDashboard(){
+  const all=allPrompts();
+  const tc={};all.forEach(p=>{tc[p.type]=(tc[p.type]||0)+1;});
+  const maxT=Math.max(...Object.values(tc),1);
+  document.getElementById('typeChart').innerHTML=Object.entries(tc).map(([t,c])=>`<div class="bar-item"><span class="bar-lbl">${TI[t]||''} ${TL[t]||t}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(c/maxT*100)}%"></div></div><span class="bar-cnt">${c}</span></div>`).join('');
+  const top5=[...all].sort((a,b)=>(b.uses||0)-(a.uses||0)).slice(0,5);
+  const maxU=Math.max(...top5.map(p=>p.uses||0),1);
+  document.getElementById('topChart').innerHTML=top5.map(p=>`<div class="bar-item"><span class="bar-lbl">${p.title}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round((p.uses||0)/maxU*100)}%;background:var(--blue)"></div></div><span class="bar-cnt">${p.uses||0}</span></div>`).join('');
+  document.getElementById('dashBody').innerHTML=all.map(p=>`<tr onclick="openModal('${p.id}')" style="cursor:pointer"><td style="font-weight:600">${p.title}</td><td style="font-family:monospace;font-size:11px">${p.code||''}</td><td><span class="badge b${p.type}">${TI[p.type]||''} ${TL[p.type]||p.type}</span></td><td><span class="badge b${p.level}">${p.level}</span></td><td style="text-align:center">${p.year||'-'}</td><td style="text-align:center">${p.uses||0}</td><td><span class="${RC[p.rating]||'b-muted badge'}">${p.rating||'-'}</span></td><td>${p.modified||'-'}</td><td>${p.author||'-'}</td></tr>`).join('');
+}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑲ Metrics
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+function renderMetrics(){
+  document.getElementById('kpiRows').innerHTML=[
+    {n:'시간 절약률',m:'(기존 소요 - AI 소요) / 기존 소요 × 100',t:'50% 이상'},
+    {n:'프롬프트 재사용률',m:'라이브러리 사용 수 / 전체 사용 수 × 100',t:'70% 이상'},
+    {n:'품질 점수',m:'AI 출력물 자체 평가 (1~5점)',t:'평균 4.0 이상'},
+    {n:'수정 횟수',m:'AI 출력 후 평균 수정 횟수',t:'평균 2회 이하'},
+    {n:'팀 활용률',m:'팀원 중 주 1회 이상 사용 비율',t:'80% 이상'},
+  ].map(k=>`<div class="metric-row"><div class="metric-name">${k.n}</div><div class="metric-method">${k.m}</div><div class="metric-target">${k.t}</div></div>`).join('');
+  renderEffYearTabs();
+  renderEffTable();
+  renderMonthly();
+}
+
+function renderEffYearTabs(){
+  const years=effYears();
+  const mkTab=(y,cid)=>`<span class="ytab ${ACTIVE_EFF_Y===y?'active':''}" style="padding:3px 10px;font-size:11px" onclick="selectEffY(${y},'${cid}')">${y}</span>`;
+  document.getElementById('effYearTabs').innerHTML=years.map(y=>mkTab(y,'effYearTabs')).join('');
+  document.getElementById('monthlyYearTabs').innerHTML=years.map(y=>mkTab(y,'monthlyYearTabs')).join('');
+}
+function selectEffY(y,cid){
+  ACTIVE_EFF_Y=y;
+  document.querySelectorAll(`#${cid} .ytab`).forEach(t=>t.classList.toggle('active',t.textContent==y));
+  if(cid==='effYearTabs') renderEffTable();
+  else renderMonthly();
+}
+
+async function addEffect(){
+  const date=document.getElementById('eff-date').value;
+  const task=document.getElementById('eff-task').value.trim();
+  if(!date||!task){toast('⚠️ 날짜와 업무 내용을 입력해주세요');return;}
+  const y=new Date(date).getFullYear();
+  const rec={date,task,
+    ai:parseFloat(document.getElementById('eff-ai').value)||0,
+    old_t:parseFloat(document.getElementById('eff-old').value)||0,
+    quality:parseInt(document.getElementById('eff-quality').value)||4,
+    edits:parseInt(document.getElementById('eff-edits').value)||0,
+    memo:document.getElementById('eff-memo').value.trim()};
+  if(!EFF_CACHE[y]) EFF_CACHE[y]=[];
+  EFF_CACHE[y].push(rec);
+  SS.set(SK.EFF(y), EFF_CACHE[y]);
+  ACTIVE_EFF_Y=y;
+  if(!IS_DEMO) flowWrite({action:'save-json', path: pathOf.effects(y), content: {year:y, records:EFF_CACHE[y]}}).catch(console.warn);
+  renderMetrics();
+  toast(`${y}년 효과 기록이 추가되었습니다`);
+}
+
+function renderEffTable(){
+  const recs=[...yearEff(ACTIVE_EFF_Y)].reverse();
+  document.getElementById('effectBody').innerHTML=recs.map(e=>{
+    const s=e.old_t>0?Math.round((e.old_t-e.ai)/e.old_t*100):0;
+    return `<tr><td>${e.date}</td><td>${e.task}</td><td style="text-align:center">${e.ai}분</td><td style="text-align:center">${e.old_t}분</td><td style="text-align:center;color:${s>=50?'var(--green)':'var(--text-secondary)'};font-weight:600">${s}%</td><td style="text-align:center">${e.quality}/5</td><td style="text-align:center">${e.edits}회</td></tr>`;
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">이 연도에 기록이 없습니다</td></tr>';
+}
+
+function renderMonthly(){
+  const recs=yearEff(ACTIVE_EFF_Y);
+  if(!recs.length){document.getElementById('monthlyReport').innerHTML=`<div style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px">${ACTIVE_EFF_Y}년 효과 기록이 없습니다.</div>`;return;}
+  const totalSaved=recs.reduce((a,e)=>a+Math.max(0,e.old_t-e.ai),0);
+  const avgQ=(recs.reduce((a,e)=>a+e.quality,0)/recs.length).toFixed(1);
+  const avgE=(recs.reduce((a,e)=>a+e.edits,0)/recs.length).toFixed(1);
+  const goodQ=recs.filter(e=>e.quality>=4).length;
+  const byM={};recs.forEach(e=>{const m=e.date?.slice(0,7)||'?';if(!byM[m])byM[m]={cnt:0,s:0};byM[m].cnt++;byM[m].s+=Math.max(0,e.old_t-e.ai);});
+  document.getElementById('monthlyReport').innerHTML=`
+    <div class="stats-row" style="margin-bottom:16px">
+      <div class="stat-card"><div class="stat-lbl">총 기록</div><div class="stat-val" style="font-size:22px">${recs.length}건</div></div>
+      <div class="stat-card"><div class="stat-lbl">총 절약 시간</div><div class="stat-val" style="font-size:22px;color:var(--blue)">${(totalSaved/60).toFixed(1)}h</div></div>
+      <div class="stat-card"><div class="stat-lbl">평균 품질</div><div class="stat-val" style="font-size:22px;color:var(--amber)">${avgQ}점</div></div>
+      <div class="stat-card"><div class="stat-lbl">품질 4점↑</div><div class="stat-val" style="font-size:22px;color:var(--green)">${Math.round(goodQ/recs.length*100)}%</div></div>
+    </div>
+    <div style="background:var(--bg-light);border-radius:var(--r);padding:14px 16px;font-size:13px;color:var(--text-secondary);line-height:2;margin-bottom:16px">
+      📊 평균 수정 횟수: <strong style="color:var(--text-primary)">${avgE}회</strong> (목표: 2회 이하)<br>
+      💰 절약 금액 추정 (시급 3만원): <strong style="color:var(--navy)">${Math.round(totalSaved/60*30000).toLocaleString()}원</strong><br>
+      ✅ 품질 목표 달성: <strong style="color:${parseFloat(avgQ)>=4?'var(--green)':'var(--red)'}">${parseFloat(avgQ)>=4?'달성':'미달성'}</strong>
+    </div>
+    <div class="chart-title" style="margin-bottom:8px">월별 현황 (${ACTIVE_EFF_Y}년)</div>
+    <div class="tbl-wrap"><table><thead><tr><th>월</th><th>건수</th><th>절약 시간</th><th>절약 금액</th></tr></thead>
+    <tbody>${Object.entries(byM).sort().map(([m,v])=>`<tr><td>${m}</td><td style="text-align:center">${v.cnt}건</td><td style="text-align:center">${(v.s/60).toFixed(1)}h</td><td style="text-align:center">${Math.round(v.s/60*30000).toLocaleString()}원</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+function calcROI(){
+  const tc=+document.getElementById('roi-tool').value||0,su=+document.getElementById('roi-setup').value||0,mg=+document.getElementById('roi-mgmt').value||0,wg=+document.getElementById('roi-wage').value||0,ca=+document.getElementById('roi-cases').value||0,sv=+document.getElementById('roi-save').value||0;
+  const annC=tc*12+su*wg+mg*wg*12,annH=ca*sv/60*12,annW=annH*wg;
+  const roi=annC>0?Math.round((annW-annC)/annC*100):0,bep=annC>0?(annC/(annW/12)).toFixed(1):0;
+  document.getElementById('roiCards').innerHTML=`<div class="stat-card"><div class="stat-lbl">연간 총 비용</div><div class="stat-val" style="font-size:18px">${Math.round(annC).toLocaleString()}원</div></div><div class="stat-card"><div class="stat-lbl">연간 절약 금액</div><div class="stat-val" style="font-size:18px;color:var(--green)">${Math.round(annW).toLocaleString()}원</div></div><div class="stat-card"><div class="stat-lbl">ROI</div><div class="stat-val" style="font-size:18px;color:${roi>0?'var(--green)':'var(--red)'}">${roi}%</div></div>`;
+  document.getElementById('roiDetail').innerHTML=`📅 연간 절약 시간: <strong>${Math.round(annH)}시간</strong><br>⏱️ 손익분기점: <strong>${bep}개월</strong><br>🚀 3년 순이익: <strong>${Math.round(annW*3-annC*3+su*wg).toLocaleString()}원</strong><br>💡 월 절약 금액: <strong>${Math.round(annW/12).toLocaleString()}원</strong>`;
+  document.getElementById('roiResult').style.display='block';
+}
+
+function switchTab(id,btn){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab-pane').forEach(c=>c.classList.remove('active'));btn.classList.add('active');document.getElementById('tab-'+id).classList.add('active');}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⑳ MD / 유틸
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+function generateMD(p){
+  const vr=(p.versions||[]).map(v=>`| ${v.ver} | ${v.date} | ${v.change} | ${v.reason} |`).join('\n');
+  return `# ${p.title}\n코드: \`${p.code||''}\` | 버전: ${p.version||'v1.0'} | 작성일: ${p.modified||''} | 작성자: ${p.author||''} | 연도: ${p.year||''}\n\n---\n\n## 프롬프트 본문\n\n\`\`\`\n${p.prompt||''}\n\`\`\`\n\n---\n\n## 사용 가이드\n\n- **언제 사용:** ${p.when||'-'}\n- **필수 입력:** ${p.inputs||'-'}\n- **주의사항:** ${p.memo||'-'}\n\n### 출력 예시\n\n${p.outputEx||'-'}\n\n---\n\n## 기본 정보\n\n| 항목 | 내용 |\n|------|------|\n| 용도 | ${TL[p.type]||p.type} |\n| 난이도 | ${p.level} |\n| 효과 평가 | ${p.rating||'-'} |\n| 사용 횟수 | ${p.uses||0}회 |\n| 태그 | ${(p.tags||[]).join(', ')} |\n\n---\n\n## 버전 이력\n\n| 버전 | 날짜 | 변경 내용 | 변경 사유 |\n|------|------|----------|---------|\n${vr}\n`;
+}
+function downloadTemplate(){downloadFile('prompt-template.md','# [프롬프트 이름]\n코드: [분류 코드] | 버전: v1.0 | 작성일: YYYY-MM-DD | 작성자: [이름]\n\n---\n\n## 프롬프트 본문\n\n```\n[프롬프트 전문]\n```\n\n---\n\n## 사용 가이드\n\n- **언제 사용:** [상황 설명]\n- **필수 입력:** [변수 목록]\n- **주의사항:** [주의할 점]\n\n### 출력 예시\n\n[결과 예시]\n\n---\n\n## 버전 이력\n\n| 버전 | 날짜 | 변경 내용 | 변경 사유 |\n|------|------|----------|---------|\n| v1.0 | YYYY-MM-DD | 최초 작성 | - |\n','text/markdown');toast('📥 MD 템플릿 다운로드 완료');}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+function downloadFile(n,c,t){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:t}));a.download=n;a.click();}
+
+/*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ㉑ 부트 시퀀스
+  - 카드 목록은 인증 없이 바로 표시
+  - auth.json + 프롬프트 데이터 병렬 로드
+  - sessionStorage 세션 복원 (탭 재방문 시 재인증 불필요)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━*/
+async function boot(){
+  document.getElementById('eff-date').value = new Date().toISOString().slice(0,10);
+
+  // ── 데모 모드 배너 ──────────────────────────────────
+  if(IS_DEMO){
+    const banner = document.createElement('div');
+    banner.id = 'demoBanner';
+    Object.assign(banner.style, {
+      position:'fixed', top:'var(--header-h)', left:'0', right:'0', zIndex:'950',
+      background:'#f6ad55', color:'#7b341e', fontSize:'.82rem', fontWeight:'700',
+      textAlign:'center', padding:'7px 16px', letterSpacing:'.03em',
+      boxShadow:'0 2px 8px rgba(0,0,0,.12)',
+      display:'flex', alignItems:'center', justifyContent:'center', gap:'12px',
+    });
+    banner.innerHTML =
+      '<span>⚠️ 데모 모드 — 표시된 데이터는 샘플이며 실제 데이터와 무관합니다. '
+      + '실사용 시 <code style="background:rgba(0,0,0,.1);padding:1px 5px;border-radius:4px">CONFIG.DEMO_MODE = false</code> 로 변경하세요.</span>'
+      + '<button onclick="(function(){'
+      +   'var b=document.getElementById(\'demoBanner\');'
+      +   'if(b){b.style.display=\'none\';}'
+      +   'var m=document.querySelector(\'.main\');'
+      +   'if(m){m.style.paddingTop=\'0\'}'
+      + '})()" style="'
+      +   'flex-shrink:0;background:rgba(0,0,0,.15);border:none;border-radius:50%;'
+      +   'width:20px;height:20px;cursor:pointer;font-size:.85rem;line-height:1;'
+      +   'color:#7b341e;display:flex;align-items:center;justify-content:center;'
+      +   'transition:.15s;font-weight:700;padding:0;" '
+      +   'title="닫기" '
+      +   'onmouseover="this.style.background=\'rgba(0,0,0,.28)\'" '
+      +   'onmouseout="this.style.background=\'rgba(0,0,0,.15)\'">✕</button>';
+    document.body.appendChild(banner);
+    // 배너 높이(~34px)만큼 .main의 상단 패딩을 추가
+    const main = document.querySelector('.main');
+    if(main) main.style.paddingTop = '34px';
+  }
+
+  if(IS_DEMO){
+    await loadAuth();   // 데모 AUTH_DATA 세팅 (await: sha256hex 비동기)
+    loadDemoData();
+    // 사번 인증 모달에 데모 힌트 박스 표시
+    const hint = document.getElementById('pinDemoHint');
+    if(hint) hint.style.display = 'block';
+    if(!restoreSession()){
+      CUR_USER = {name:'홍길동', rank:'책임', isAdmin:true, displayName:'홍길동 책임'};
+      saveSession(CUR_USER);
+    }
+    applyUserUI();
+    renderAll();
+    setSyncState('ok','데모 모드');
+    return;
+  }
+
+  // auth.json + 프롬프트 데이터 병렬 로드
+  await Promise.all([loadAuth(), loadAppData()]);
+
+  // sessionStorage 세션 복원
+  restoreSession();
+  if(CUR_USER) applyUserUI();
+}
+
+boot();
+</script>
+</body>
+</html>
