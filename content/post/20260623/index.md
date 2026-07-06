@@ -4,16 +4,11 @@ description: 한국에서 Global Travel Management Company는 도통 찾아볼 �
 slug: reasons-korea-bypasses-global-corporate-travel
 date: 2026-06-23T05:48:56+09:00
 image: 20260629063117.png
-categories:
-  - Work
-tags:
-  - TMC
-  - 기업출장
-  - Business
-  - Travel
+categories: [Work]
+tags: [TMC, 기업출장, Business, Travel]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-06-30 06:30
+updated: 2026-07-07 05:24
 ---
 
 # TMC(Travel Management Company)란?
