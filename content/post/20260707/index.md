@@ -8,7 +8,7 @@ categories: [Project]
 tags: [텔레그램, 일정, 여행, 스크린샷, Calendar, Bot, GitHub, Netlify, Screenshot, Plan, Capture, OCR, Gemini, Travel]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-07-07 06:29
+updated: 2026-08-05 05:48
 ---
 
 # 이번엔 여행 예약이 문제였다.

@@ -8,7 +8,7 @@ categories: [Project]
 tags: [Telegram, Netlify, Bot, Obsidian, Read-It-Later, 스크래핑, 옵시디언, 텔레그램, GitHub]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-07-07 05:36
+updated: 2026-08-04 08:23
 ---
 
 # 읽어야 될 글들이 너무 많아졌다.
@@ -123,147 +123,278 @@ const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const KOOFR_EMAIL = process.env.KOOFR_EMAIL;
 const KOOFR_APP_PASSWORD = process.env.KOOFR_APP_PASSWORD;
 const ALLOWED_USER_ID = process.env.ALLOWED_USER_ID;
-const KOOFR_WEBDAV_URL = "https://app.koofr.net/dav/Koofr";
+const KOOFR_WEBDAV_URL = 'https://app.koofr.net/dav/Koofr';
+
+// jsdom, iconv-lite, webdav는 Node.js API를 사용하므로 Edge Runtime을 사용하지 않는다.
+export const runtime = 'nodejs';
+
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+  'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+
+/**
+ * HTML 앞부분은 charset 선언 자체가 ASCII이므로 latin1로 읽어도 안전하다.
+ * meta charset과 과거형 http-equiv/content 선언을 모두 지원한다.
+ */
+function getDeclaredCharset(buffer: Buffer, contentType: string | null): string | null {
+  const headerMatch = contentType?.match(/charset\s*=\s*["']?([^\s;"']+)/i);
+  if (headerMatch) return headerMatch[1].toLowerCase();
+
+  const head = buffer.subarray(0, 64 * 1024).toString('latin1');
+  const metaCharset = head.match(/<meta\b[^>]*\bcharset\s*=\s*["']?([^\s"'/>;]+)/i);
+  if (metaCharset) return metaCharset[1].toLowerCase();
+
+  const httpEquiv = head.match(
+    /<meta\b[^>]*\bcontent\s*=\s*["'][^"']*charset\s*=\s*([^\s;"']+)[^"']*["'][^>]*>/i,
+  );
+  return httpEquiv?.[1]?.toLowerCase() ?? null;
+}
+
+function normalizeCharset(charset: string | null): string | null {
+  if (!charset) return null;
+  const value = charset.trim().toLowerCase().replace(/["']/g, '');
+
+  if (['utf-8', 'utf8'].includes(value)) return 'utf-8';
+  if (
+    value.includes('euc-kr') ||
+    value.includes('cp949') ||
+    value.includes('ms949') ||
+    value.includes('x-windows-949') ||
+    value.includes('ks_c_5601') ||
+    value.includes('ks-c-5601')
+  ) {
+    // CP949는 EUC-KR의 확장 문자까지 포함하므로 국내 레거시 사이트에 더 안전하다.
+    return 'cp949';
+  }
+
+  return iconv.encodingExists(value) ? value : null;
+}
+
+function isValidUtf8(buffer: Buffer): boolean {
+  try {
+    new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function countBrokenCharacters(value: string): number {
+  return (value.match(/\uFFFD/g) || []).length + (value.match(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g) || []).length;
+}
+
+/**
+ * 최신 네이버처럼 선언값과 실제 바이트가 어긋나는 경우를 막기 위해
+ * 유효한 UTF-8 바이트는 UTF-8을 최우선으로 사용한다.
+ * UTF-8이 아니면 선언 인코딩과 CP949 후보 중 손상 문자가 적은 결과를 택한다.
+ */
+function decodeHtml(buffer: Buffer, contentType: string | null): string {
+  // UTF-8 BOM
+  if (buffer.length >= 3 && buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
+    return iconv.decode(buffer, 'utf-8');
+  }
+
+  if (isValidUtf8(buffer)) return iconv.decode(buffer, 'utf-8');
+
+  const declared = normalizeCharset(getDeclaredCharset(buffer, contentType));
+  const encodings = Array.from(new Set([declared, 'cp949'].filter(Boolean))) as string[];
+  const candidates = encodings.map(encoding => ({
+    encoding,
+    html: iconv.decode(buffer, encoding),
+  }));
+
+  candidates.sort((a, b) => countBrokenCharacters(a.html) - countBrokenCharacters(b.html));
+  return candidates[0]?.html ?? iconv.decode(buffer, 'utf-8');
+}
+
+function normalizeText(value: string | null | undefined): string {
+  return (value || '')
+    .normalize('NFC')
+    .replace(/\uFFFD+/g, '')
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function yamlString(value: string): string {
+  return JSON.stringify(normalizeText(value));
+}
+
+function makeSafeFileName(title: string): string {
+  const cleaned = normalizeText(title)
+    .replace(/[\\/:*?"<>|%]/g, '-')
+    .replace(/\.+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 150);
+
+  return `${cleaned || 'Untitled'}.md`;
+}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const message = body.message;
 
-    if (!message || !message.text) return NextResponse.json({ ok: true });
+    if (!message?.text) return NextResponse.json({ ok: true });
 
     const chatId = message.chat.id;
-    if (ALLOWED_USER_ID && String(chatId) !== String(ALLOWED_USER_ID)) return NextResponse.json({ ok: true });
+    if (ALLOWED_USER_ID && String(chatId) !== String(ALLOWED_USER_ID)) {
+      return NextResponse.json({ ok: true });
+    }
 
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const urlMatch = message.text.match(urlRegex);
+    const urlMatch = message.text.match(/https?:\/\/[^\s]+/g);
+    if (!urlMatch) return NextResponse.json({ ok: true });
 
-    if (urlMatch) {
-      let targetUrl = urlMatch[0];
-      // URL 정규화 (UTM 및 추적 파라미터 제거)
-      try {
-        const urlObj = new URL(targetUrl);
-        ['utm_source', 'utm_medium', 'utm_campaign', 'ref'].forEach(p => urlObj.searchParams.delete(p));
-        targetUrl = urlObj.toString();
-      } catch (e) {}
+    let targetUrl = urlMatch[0];
+    try {
+      const urlObj = new URL(targetUrl);
+      ['utm_source', 'utm_medium', 'utm_campaign', 'ref'].forEach(param =>
+        urlObj.searchParams.delete(param),
+      );
+      targetUrl = urlObj.toString();
+    } catch {
+      // URL 생성 실패 시 Telegram에서 추출한 원문을 그대로 사용한다.
+    }
 
-      await sendTelegramMessage(chatId, "🔍 원본 콘텐츠 및 고화질 이미지 분석 중...");
+    await sendTelegramMessage(chatId, '🔍 원본 콘텐츠 및 고화질 이미지 분석 중...');
 
-      try {
-        const response = await fetch(targetUrl, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36' }
-        });
-        const buffer = Buffer.from(await response.arrayBuffer());
+    try {
+      const response = await fetch(targetUrl, {
+        redirect: 'follow',
+        headers: {
+          'User-Agent': USER_AGENT,
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.7,en;q=0.5',
+        },
+      });
 
-        // 1. 인코딩 분석 (EUC-KR / UTF-8 분기)
-        let tempHtml = buffer.toString('binary');
-        let charset = 'utf-8';
-        const charsetMatch = tempHtml.match(/<meta[^>]*charset=["']?([\w-]+)["']?/i);
-        
-        if (charsetMatch) {
-          charset = charsetMatch[1].toLowerCase();
-        } else {
-          const contentType = response.headers.get('content-type');
-          const headerMatch = contentType?.match(/charset=([\w-]+)/i);
-          if (headerMatch) charset = headerMatch[1].toLowerCase();
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      const buffer = Buffer.from(await response.arrayBuffer());
+      const html = decodeHtml(buffer, contentType);
+
+      // naver.me 등 단축 URL은 최종 리다이렉트 주소를 base URL로 사용해야 한다.
+      const effectiveUrl = response.url || targetUrl;
+      const dom = new JSDOM(html, { url: effectiveUrl });
+      const document = dom.window.document;
+
+      // Readability가 DOM을 변경하기 전에 신뢰도 높은 제목 후보를 보관한다.
+      const ogTitle = normalizeText(
+        document.querySelector('meta[property="og:title"]')?.getAttribute('content'),
+      );
+      const originalDocumentTitle = normalizeText(document.title);
+
+      ['script', 'style', 'noscript', 'footer', 'nav'].forEach(selector => {
+        document.querySelectorAll(selector).forEach(element => element.remove());
+      });
+
+      // 본문 iframe을 무조건 제거하면 일부 네이버 카페 페이지의 실제 글도 사라질 수 있다.
+      // 광고/추적용 iframe만 제거하고, 같은 네이버 계열 iframe은 남긴다.
+      document.querySelectorAll('iframe').forEach(iframe => {
+        const src = iframe.getAttribute('src') || '';
+        let keep = false;
+        try {
+          const host = new URL(src, effectiveUrl).hostname;
+          keep = host === 'naver.com' || host.endsWith('.naver.com');
+        } catch {
+          keep = false;
         }
+        if (!keep) iframe.remove();
+      });
 
-        let html: string;
-        if (charset.includes('euc-kr') || charset.includes('cp949') || charset.includes('ks_c_5601')) {
-          html = iconv.decode(buffer, 'euc-kr');
-        } else {
-          html = iconv.decode(buffer, 'utf-8');
+      document.querySelectorAll('a').forEach(anchor => {
+        const href = anchor.getAttribute('href');
+        if (!href || href === '#' || anchor.querySelector('img')) {
+          anchor.replaceWith(...Array.from(anchor.childNodes));
         }
+      });
 
-        const dom = new JSDOM(html, { url: targetUrl });
-        const document = dom.window.document;
+      const article = new Readability(document).parse();
 
-        // 불필요 불순물 태그 제거
-        ['script', 'style', 'iframe', 'noscript', 'footer', 'nav'].forEach(s => {
-          document.querySelectorAll(s).forEach(el => el.remove());
-        });
+      if (!article?.content) {
+        await sendTelegramMessage(chatId, '❌ 본문을 추출할 수 없습니다.');
+        return NextResponse.json({ ok: true });
+      }
 
-        // [추가] 이미지 감싸기용 빈 링크(#) 또는 이미지 링크 태그 제거 로직
-        // 링크 내부의 내용(이미지)은 유지하되, 겉의 <a> 태그 껍데기만 벗겨내는 디테일입니다.
-        document.querySelectorAll('a').forEach(a => {
-          const href = a.getAttribute('href');
-          if (!href || href === '#' || a.querySelector('img')) {
-            a.replaceWith(...Array.from(a.childNodes));
-          }
-        });
+      const readabilityTitle = normalizeText(article.title);
+      const title = ogTitle || readabilityTitle || originalDocumentTitle || 'Untitled';
 
-        const reader = new Readability(document);
-        const article = reader.parse();
+      const turndownService = new TurndownService({
+        headingStyle: 'atx',
+        hr: '---',
+        bulletListMarker: '-',
+        codeBlockStyle: 'fenced',
+      });
 
-        if (article && article.title) {
-          const turndownService = new TurndownService({ headingStyle: 'atx', hr: '---', bulletListMarker: '-', codeBlockStyle: 'fenced' });
-          
-          // 2. [핵심 수정] 고화질 원본 이미지 주소 강제 추출 규칙
-          turndownService.addRule('absoluteImages', {
-            filter: 'img',
-            replacement: function (content, node: any) {
-              // 네이버 블로그 등 레이지 로딩 전용 속성들을 순차적으로 검사
-              let src = node.getAttribute('data-lazy-src') || 
-                        node.getAttribute('data-source') || 
-                        node.getAttribute('src') || 
-                        node.getAttribute('data-src');
-              
-              if (!src) return '';
-              
-              try {
-                // 상대 경로인 경우 절대 경로로 변환
-                let absoluteUrl = new URL(src.split(' ')[0], targetUrl).href;
-                
-                // 💡 네이버 블로그 및 카카오 등 썸네일/블러 속성 제거 로직 추가
-                if (absoluteUrl.includes('pstatic.net') || absoluteUrl.includes('blogfiles')) {
-                  // ?type=w80_blur 또는 ?type=w966_2X 등 주소 뒤에 붙는 쿼리스트링 제거하여 원본 호출
-                  const cleanUrl = new URL(absoluteUrl);
-                  if (cleanUrl.searchParams.has('type')) {
-                    // 네이버 블로그 원본 이미지 고화질 타입인 w1으로 변경하거나 파라미터 삭제
-                    cleanUrl.searchParams.set('type', 'w1'); 
-                  }
-                  absoluteUrl = cleanUrl.toString();
-                }
-                
-                const alt = node.getAttribute('alt') || 'image';
-                return `\n![${alt}](${absoluteUrl})\n`;
-              } catch (e) { return ''; }
+      turndownService.addRule('absoluteImages', {
+        filter: 'img',
+        replacement: function (_content, node: any) {
+          const src =
+            node.getAttribute('data-lazy-src') ||
+            node.getAttribute('data-source') ||
+            node.getAttribute('data-src') ||
+            node.getAttribute('src');
+
+          if (!src) return '';
+
+          try {
+            let absoluteUrl = new URL(src.split(' ')[0], effectiveUrl).href;
+
+            if (absoluteUrl.includes('pstatic.net') || absoluteUrl.includes('blogfiles')) {
+              const cleanUrl = new URL(absoluteUrl);
+              if (cleanUrl.searchParams.has('type')) cleanUrl.searchParams.set('type', 'w1');
+              absoluteUrl = cleanUrl.toString();
             }
-          });
 
-          const markdownContent = turndownService.turndown(article.content);
-          const now = new Date();
-          const description = article.excerpt ? article.excerpt.replace(/"/g, '\\"').replace(/\n/g, ' ').trim() : "";
+            const alt = normalizeText(node.getAttribute('alt')) || 'image';
+            return `\n![${alt.replace(/[\[\]]/g, '')}](${absoluteUrl})\n`;
+          } catch {
+            return '';
+          }
+        },
+      });
 
-          const frontmatter = `---
-title: "${article.title.replace(/"/g, '\\"')}"
-description: "${description}"
-source: "${targetUrl}"
-author: "${article.byline || 'Unknown'}"
+      const markdownContent = turndownService.turndown(article.content);
+      const now = new Date();
+      const description = normalizeText(article.excerpt);
+      const author = normalizeText(article.byline) || 'Unknown';
+
+      const frontmatter = `---
+title: ${yamlString(title)}
+description: ${yamlString(description)}
+source: ${yamlString(effectiveUrl)}
+author: ${yamlString(author)}
 created: ${now.toISOString().split('T')[0]}
-scraped_at: "${now.toLocaleString('ko-KR')}"
+scraped_at: ${yamlString(now.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }))}
 tags: ["ReadItLater"]
 ---
 
 `;
 
-          const finalContent = frontmatter + `# ${article.title}\n\n${markdownContent}`;
-          const fileName = `${article.title.replace(/[\/\\?%*:|"<>]/g, '-')}.md`;
+      const finalContent = `${frontmatter}# ${title}\n\n${markdownContent}`;
+      const fileName = makeSafeFileName(title);
 
-          const client = createClient(KOOFR_WEBDAV_URL, { username: KOOFR_EMAIL, password: KOOFR_APP_PASSWORD });
-          await client.putFileContents(`/ReadItLater/${fileName}`, finalContent);
+      const client = createClient(KOOFR_WEBDAV_URL, {
+        username: KOOFR_EMAIL,
+        password: KOOFR_APP_PASSWORD,
+      });
+      await client.putFileContents(`/ReadItLater/${fileName}`, finalContent, {
+        overwrite: true,
+      });
 
-          await sendTelegramMessage(chatId, `✅ 아카이빙 완료!\n\n📄 ${fileName}`, true);
-        } else {
-          await sendTelegramMessage(chatId, "❌ 본문을 추출할 수 없습니다.");
-        }
-      } catch (error) {
-        console.error("Error:", error);
-        await sendTelegramMessage(chatId, "❌ 처리 중 에러가 발생했습니다.");
-      }
+      await sendTelegramMessage(chatId, `✅ 아카이빙 완료!\n\n📄 ${fileName}`, true);
+    } catch (error) {
+      console.error('Error:', error);
+      await sendTelegramMessage(chatId, '❌ 처리 중 에러가 발생했습니다.');
     }
+
     return NextResponse.json({ ok: true });
-  } catch (err) {
+  } catch (error) {
+    console.error('Webhook error:', error);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
@@ -273,7 +404,11 @@ async function sendTelegramMessage(chatId: number, text: string, disablePreview 
   await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text: text, disable_web_page_preview: disablePreview }),
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      disable_web_page_preview: disablePreview,
+    }),
   });
 }
 ```
@@ -345,3 +480,5 @@ async function sendTelegramMessage(chatId: number, text: string, disablePreview 
 ---
 2026.05.28 스크래핑 실패 사이트 확인
 - 네이버 블로그 등 보통의 사이트를 스크래핑이 잘 되지만 '[브런치](https://brunch.co.kr/)'는 강력한 보안 및 크롤링 방지 정책이 적용되어 있어 오류가 발생한다.<br>Obsidian Web Clipper로 클리핑 하면 그만이지만, [Oracle Cloud Free Tier](https://www.oracle.com/cloud/)를 받은 만큼 Netlify가 아닌 자체 서버에서 스크래핑 해보는 걸로 했다. 
+2026.08.04 네이버 카페 등 md 파일 저장시 인코딩 깨짐 확인
+- md 파일 저장시 인코딩이 깨지는 경우를 방지하기 위해 코드를 일부 수정했다.

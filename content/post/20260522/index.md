@@ -8,7 +8,7 @@ categories: [Project]
 tags: [AI, 템플릿, Template, HTML, SVG, 안내문, 보고서, 라이브러리, Library]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-06-15 05:29
+updated: 2026-08-04 08:19
 ---
 
 # 보고서와 안내문을 HTML 코딩으로 만들기 시작했다.
@@ -19,7 +19,7 @@ AI를 하도 많이 쓰다보니 이제는 보고서도 PPT에서 HTML로 쓰기
 ![템플릿 갤러리(데모 화면)](20260526053843.png) ![웹폰트 라이브러리(데모 화면)](20260526053918.png) ![템플릿 업로드](20260526053956.png) ![폰트 추가](20260526054203.png)
 
 템플릿 라이브러리의 주요 기능은 다음과 같다.
-- 사번 인증을 통해 권한이 있는 사용자만 세부 내용을 볼 수 있다. <br>방문자의 경우 갤러리 첫 화면만 볼 수 있고, 세부 내용 클릭시 사번 인증을 필요로 한다.
+- 사번 인증을 통해 권한이 있는 사용자만 세부 내용을 볼 수 있다. <br>방문자의 경우 갤러리 첫 화면만 볼 수 있고, 세부내요 클릭시 사번 인증을 필요로 한다.
 - 사번은 SHA-256 방식으로 암호화하고 SALT를 추가해 보안을 강화했다.<br>(사내 시스템 서버 관리자가 아니기 때문에 개인적으로는 Client에서 할 수 있는 최선이라 생각한다. 😇)
 	- 예를 들어 사번이 20260522라고 할 때, SALT값이 LasId55QyWMsvn5Q3aVOudOQ 이면 DB에 저장되는 사번은 "7b8f0e8c75e5852f5fde3a0dbd589bb43579a8acbc1d75600bad8d10759daad6" 이와 같은 Hash값이다.
 	- 혹시 몰라 사번 해시 생성기도 하단에 링크를 걸어놓았다.
@@ -42,72 +42,49 @@ AI를 하도 많이 쓰다보니 이제는 보고서도 PPT에서 HTML로 쓰기
   ├── templates.json    ← 템플릿 코드 및 작성자, 태그 등 메타데이터 저장<br>
   └── fonts.json    ← 폰트 CDN URL 및 작성자, 태그 등 메타데이터 저장
 
-사이트를 제작하는데 가장 힘든 건 바로 Power Automate에서 Read/Write용 Flow를 만드는 거다.<br>왜냐하면 Flow는 AI가 직접 만들어 주질 못해서 사용자가 하나하나 다 설정해야 하는데, 이 작업이 만만치 않다.<br>여기서 포기하는 사람이 수두룩하다. 😇 DB라는 개념 조차 없는데 Flow까지 만드려고 하면 거의 불가능에 가까운 수준이다.<br>그래서 대략적인 아키텍쳐와 내가 설정해서 잘 작동하고 있는 Read/Write Flow JSON 파일을 같이 공유한다.<br>Power Automate에서 잘 작동하는 Flow를 Export하면 Package 형태의 .zip 파일로 만들어주는 데, 들여다보면 definition.json 파일이 있고, 이 파일이 핵심파일이다.<br>해당 파일의 내용을 토대로 각자의 사내 환경에 맞춰서 Rebuild 해달라고 AI에게 시켜서 자세한 가이드를 달라고 하면 쉽게 해결해 줄지도 모른다. 
+사이트를 제작하는데 가장 힘든 건 바로 Power Automate에서 Read/Write용 Flow를 만드는 거다.<br>왜냐하면 Flow는 AI가 직접 만들어 주질 못해서 사용자가 하나하나 다 설정해야 하는데, 이 작업이 만만치 않다.<br>여기서 포기하는 사람이 수두룩하다. 😇 DB라는 개념 조차 없는데 Flow까지 만드려고 하면 거의 불가능에 가까운 수준이다.<br>그래서 대략적인 아키텍쳐와 내가 설정해서 잘 작동하고 있는 Read/Write Flow JSON 파일을 같이 공유한다.<br>각자의 사내 환경에 맞춰서 Rebuild 해달라고 AI에게 시키면 어느정도 해결해 줄지도 모른다. 
 
 ## Read Flow
 
-> [ 웹페이지 (사용자) ] <br>
->        │<br>
->        ▼ (1) 원하는 기능(action)을 담아 요청 (POST)<br>
-> [ Power Automate Flow (Read) ]<br>
->        │<br>
->        ├─► [Switch 조건문] "네가 요청한 action이 무엇이니?"<br>
->        │      ├─ 1) get-salt      ──► 암호화용 소금(Salt) 값 반환<br>
->        │      ├─ 2) verify-empno  ──► 사원 인증 및 권한 확인 (auth.json)<br>
->        │      ├─ 3) read-templates──► 템플릿 목록 가져오기 (templates.json)<br>
->        │      ├─ 4) read-fonts    ──► 폰트 목록 가져오기 (fonts.json)<br>
->        │      └─ 5) read-html     ──► 특정 HTML 템플릿 파일 내용 읽기<br>
->        │<br>
->        ▼ (2) SharePoint에서 알맞은 데이터를 꺼내옴<br>
+> [ 웹페이지 (사용자) ] 
+>        │
+>        ▼ (1) 원하는 기능(action)을 담아 요청 (POST)
+> [ Power Automate Flow (Read) ]
+>        │
+>        ├─► [Switch 조건문] "네가 요청한 action이 무엇이니?"
+>        │      ├─ 1) get-salt      ──► 암호화용 소금(Salt) 값 반환
+>        │      ├─ 2) verify-empno  ──► 사원 인증 및 권한 확인 (auth.json)
+>        │      ├─ 3) read-templates──► 템플릿 목록 가져오기 (templates.json)
+>        │      ├─ 4) read-fonts    ──► 폰트 목록 가져오기 (fonts.json)
+>        │      └─ 5) read-html     ──► 특정 HTML 템플릿 파일 내용 읽기
+>        │
+>        ▼ (2) SharePoint에서 알맞은 데이터를 꺼내옴
 > [ SharePoint 저장소 (템플릿 라이브러리 폴더) ]
 
-{{< details title="Read Flow JSON" open="true" >}}
-```
-{"name":"TEMPLATES_READ","id":"/providers/Microsoft.Flow/flows/TEMPLATES_READ","type":"Microsoft.Flow/flows","properties":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_logicflows","displayName":"ga_templates_read","definition":{"metadata":{"workflowEntityId":null,"processAdvisorMetadata":null,"flowChargedByPaygo":null,"flowclientsuspensionreason":"None","flowclientsuspensiontime":null,"flowclientsuspensionreasondetails":null,"creator":{"id":"JUHEON","type":"User","tenantId":"JUHEON.com"},"provisioningMethod":"FromDefinition","failureAlertSubscription":true,"clientLastModifiedTime":"2026-05-11T06:59:12.6417567Z","connectionKeySavedTimeKey":"2026-05-11T06:58:12.7360555Z","creationSource":null,"modifiedSources":"Portal"},"$schema":"https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#","contentVersion":"undefined","parameters":{"$authentication":{"defaultValue":{},"type":"SecureObject"},"$connections":{"defaultValue":{},"type":"Object"}},"triggers":{"manual":{"metadata":{},"type":"Request","kind":"Http","inputs":{"schema":{"type":"object","properties":{"action":{"type":"string"},"empNo":{"type":"string"},"hash":{"type":"string"},"id":{"type":"string"},"html":{"type":"string"},"base64":{"type":"string"},"ext":{"type":"string"},"items":{"type":"array"},"fonts":{"type":"array"}},"required":["action"],"additionalProperties":true},"method":"POST","triggerAuthenticationType":"All"}}},"actions":{"Initialize_variable_varAction":{"runAfter":{"Initialize_variable_varMatchedUser":["Succeeded"]},"type":"InitializeVariable","inputs":{"variables":[{"name":"varAction","type":"string","value":"@triggerBody()?['action']"}]}},"Switch":{"runAfter":{"Initialize_variable_varAction":["Succeeded"]},"cases":{"get-salt":{"case":"get-salt","actions":{"Send_an_HTTP_request_to_SharePoint_auth_1":{"type":"OpenApiConnection","inputs":{"parameters":{"dataset":"https://{회사도메인}.sharepoint.com/sites/{사이트명}","parameters/method":"GET","parameters/uri":"_api/web/GetFileByServerRelativeUrl('/sites/{사이트명}/Shared%20Documents/템플릿%20라이브러리/auth.json')/$value","parameters/headers":{"Accept":"application/json"}},"host":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","connectionName":"shared_sharepointonline","operationId":"HttpRequest"},"authentication":"@parameters('$authentication')"}},"Response":{"runAfter":{"Set_variable":["Succeeded"]},"type":"Response","kind":"Http","inputs":{"statusCode":200,"headers":{"Content-Type":"application/json"},"body":"@json(concat('{\"salt\":\"', variables('varSalt'), '\"}'))"}},"Set_variable":{"runAfter":{"Send_an_HTTP_request_to_SharePoint_auth_1":["Succeeded"]},"type":"SetVariable","inputs":{"name":"varSalt","value":"{SALT값}"}}}},"verify-empno":{"case":"verify-empno","actions":{"Parse_JSON":{"runAfter":{"Compose_authText":["Succeeded"]},"type":"ParseJson","inputs":{"content":"@outputs('Compose_authText')","schema":{"type":"object","properties":{"_comment":{"type":"string"},"_saltHint":{"type":"string"},"users":{"type":"array","items":{"type":"object","properties":{"hash":{"type":"string"},"name":{"type":"string"},"rank":{"type":"string"},"isAdmin":{"type":"boolean"}},"required":["hash","name","rank","isAdmin"]}}}}}},"Filter_array":{"runAfter":{"Parse_JSON":["Succeeded"]},"type":"Query","inputs":{"from":"@body('Parse_JSON')?['users']","where":"@equals(item()?['hash'],triggerBody()?['hash'])"}},"Condition":{"actions":{"Parse_JSON_2":{"runAfter":{"Set_variable_1":["Succeeded"]},"type":"ParseJson","inputs":{"content":"@variables('varMatchedUser')","schema":{"type":"object","properties":{"hash":{"type":"string"},"name":{"type":"string"},"rank":{"type":"string"},"isAdmin":{"type":"boolean"}},"required":["hash","name","rank","isAdmin"]}}},"Response_2":{"runAfter":{"Parse_JSON_2":["Succeeded"]},"type":"Response","kind":"Http","inputs":{"statusCode":200,"headers":{"Content-Type":"application/json"},"body":{"ok":true,"name":"@{body('Parse_JSON_2')?['name']}","rank":"@{body('Parse_JSON_2')?['rank']}","isAdmin":"@{body('Parse_JSON_2')?['isAdmin']}"}}},"Set_variable_1":{"type":"SetVariable","inputs":{"name":"varMatchedUser","value":"@string(first(body('Filter_array')))"}}},"runAfter":{"Filter_array":["Succeeded"]},"else":{"actions":{"Response_3":{"type":"Response","kind":"Http","inputs":{"statusCode":200,"headers":{"Content-Type":"application/json"},"body":{"ok":false}}}}},"expression":{"and":[{"greater":["@length(body('Filter_array'))",0]}]},"type":"If"},"Get_file_content_auth":{"type":"OpenApiConnection","inputs":{"parameters":{"dataset":"https://{회사도메인}.sharepoint.com/sites/{사이트명}","path":"/Shared Documents/템플릿 라이브러리/auth.json","inferContentType":false},"host":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","connectionName":"shared_sharepointonline","operationId":"GetFileContentByPath"},"authentication":"@parameters('$authentication')"}},"Compose_authText":{"runAfter":{"Get_file_content_auth":["Succeeded"]},"type":"Compose","inputs":"@base64ToString(\r\n  body('Get_file_content_auth')?['$content']\r\n)"}}},"read-templates":{"case":"read-templates","actions":{"Send_an_HTTP_request_to_SharePoint_templates":{"type":"OpenApiConnection","inputs":{"parameters":{"dataset":"https://{회사도메인}.sharepoint.com/sites/{사이트명}","parameters/method":"GET","parameters/uri":"_api/web/GetFileByServerRelativeUrl('/sites/{사이트명}/Shared%20Documents/템플릿%20라이브러리/templates.json')/$value","parameters/headers":{"Accept":"application/json"}},"host":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","connectionName":"shared_sharepointonline","operationId":"HttpRequest"},"authentication":"@parameters('$authentication')"}},"Response_4":{"runAfter":{"Send_an_HTTP_request_to_SharePoint_templates":["Succeeded"]},"type":"Response","kind":"Http","inputs":{"statusCode":200,"headers":{"Content-Type":"application/json"},"body":"@body('Send_an_HTTP_request_to_SharePoint_templates')"}}}},"read-fonts":{"case":"read-fonts","actions":{"Send_an_HTTP_request_to_SharePoint_fonts":{"type":"OpenApiConnection","inputs":{"parameters":{"dataset":"https://{회사도메인}.sharepoint.com/sites/{사이트명}","parameters/method":"GET","parameters/uri":"_api/web/GetFileByServerRelativeUrl('/sites/{사이트명}/Shared%20Documents/템플릿%20라이브러리/fonts.json')/$value","parameters/headers":{"Accept":"application/json"}},"host":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","connectionName":"shared_sharepointonline","operationId":"HttpRequest"},"authentication":"@parameters('$authentication')"}},"Response_5":{"runAfter":{"Send_an_HTTP_request_to_SharePoint_fonts":["Succeeded"]},"type":"Response","kind":"Http","inputs":{"statusCode":200,"headers":{"Content-Type":"application/json"},"body":"@body('Send_an_HTTP_request_to_SharePoint_fonts')"}}}},"read-html":{"case":"read-html","actions":{"Send_an_HTTP_request_to_SharePoint_html":{"type":"OpenApiConnection","inputs":{"parameters":{"dataset":"https://{회사도메인}.sharepoint.com/sites/{사이트명}","parameters/method":"GET","parameters/uri":"@concat('_api/web/GetFileByServerRelativeUrl(''','/sites/{사이트명}/Shared%20Documents/템플릿%20라이브러리/templates/',triggerBody()?['id'],'.',if(empty(triggerBody()?['fileExt']),'html',triggerBody()?['fileExt']),''')/$value')","parameters/headers":{"Accept":"application/json"}},"host":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","connectionName":"shared_sharepointonline","operationId":"HttpRequest"},"authentication":"@parameters('$authentication')"}},"Response_6":{"runAfter":{"Send_an_HTTP_request_to_SharePoint_html":["Succeeded"]},"type":"Response","kind":"Http","inputs":{"statusCode":200,"headers":{"Content-Type":"application/json"},"body":{"html":"@{body('Send_an_HTTP_request_to_SharePoint_html')}"}}}}}},"default":{"actions":{"Response_7":{"type":"Response","kind":"Http","inputs":{"statusCode":200,"body":{"error":"unknown action"}}}}},"expression":"@variables('varAction')","type":"Switch"},"Initialize_variable_varMatchedUser":{"runAfter":{"Initialize_variable_varSalt":["Succeeded"]},"type":"InitializeVariable","inputs":{"variables":[{"name":"varMatchedUser","type":"string"}]}},"Initialize_variable_varSalt":{"runAfter":{},"type":"InitializeVariable","inputs":{"variables":[{"name":"varSalt","type":"string"}]}}}},"connectionReferences":{"shared_sharepointonline":{"connectionName":"shared-sharepointonl-c9dd6a08-056b-4063-a4be-c4c1f822e170","source":"Embedded","id":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","tier":"NotSpecified","apiName":"sharepointonline","isProcessSimpleApiReferenceConversionAlreadyDone":false}},"flowFailureAlertSubscribed":false,"isManaged":false}}
-```
-{{< /details >}}
+
 
 ## Write Flow
 
-> [ 웹페이지 (사용자/관리자) ]<br>
->        │<br>
->        ▼ (1) 변경할 데이터와 기능(action)을 담아 요청 (POST)<br>
-> [ Power Automate Flow (Write) ]<br>
->        │<br>
->        ▼ (2) [Condition] 권한 검문소<br>
->        │     "요청자가 관리자(isAdmin=true)이거나, 본인이 쓴 글(empNo=authorEmpNo)인가?"<br>
->        │      ├─ [No]  ──► 🚫 거부 응답 (403 Forbidden / ok: false) 후 종료<br>
->        │      └─ [Yes] ──► ✅ 통과! 다음 단계로 이동<br>
->        │<br>
->        ├─► [Switch 조건문] "어떤 쓰기/지우기 작업을 할까?"<br>
->        │      ├─ 1) save-html      ──► HTML 템플릿 생성 및 업데이트<br>
->        │      ├─ 2) save-thumb     ──► 이미지 썸네일 파일 생성 (Base64 변환)<br>
->        │      ├─ 3) save-templates ──► 템플릿 목록 파일(templates.json) 갱신<br>
->        │      ├─ 4) save-fonts     ──► 폰트 목록 파일(fonts.json) 갱신<br>
->        │      └─ 5) delete-template──► 특정 템플릿 HTML 및 썸네일 삭제<br>
->        │<br>
->        ▼ (3) SharePoint의 파일들을 실제로 조작함<br>
+> [ 웹페이지 (사용자/관리자) ]
+>        │
+>        ▼ (1) 변경할 데이터와 기능(action)을 담아 요청 (POST)
+> [ Power Automate Flow (Write) ]
+>        │
+>        ▼ (2) [Condition] 권한 검문소
+>        │     "요청자가 관리자(isAdmin=true)이거나, 본인이 쓴 글(empNo=authorEmpNo)인가?"
+>        │      ├─ [No]  ──► 🚫 거부 응답 (403 Forbidden / ok: false) 후 종료
+>        │      └─ [Yes] ──► ✅ 통과! 다음 단계로 이동
+>        │
+>        ├─► [Switch 조건문] "어떤 쓰기/지우기 작업을 할까?"
+>        │      ├─ 1) save-html      ──► HTML 템플릿 생성 및 업데이트
+>        │      ├─ 2) save-thumb     ──► 이미지 썸네일 파일 생성 (Base64 변환)
+>        │      ├─ 3) save-templates ──► 템플릿 목록 파일(templates.json) 갱신
+>        │      ├─ 4) save-fonts     ──► 폰트 목록 파일(fonts.json) 갱신
+>        │      └─ 5) delete-template──► 특정 템플릿 HTML 및 썸네일 삭제
+>        │
+>        ▼ (3) SharePoint의 파일들을 실제로 조작함
 > [ SharePoint 저장소 (템플릿 라이브러리 폴더) ]
 > 
-
-{{< details title="Write Flow JSON" open="true" >}}
-```
-{"name":"8894334b-f68e-4172-8dfb-5930dbc03d31","id":"/providers/Microsoft.Flow/flows/8894334b-f68e-4172-8dfb-5930dbc03d31","type":"Microsoft.Flow/flows","properties":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_logicflows","displayName":"ga_templates_write","definition":{"metadata":{"workflowEntityId":null,"processAdvisorMetadata":null,"flowChargedByPaygo":null,"flowclientsuspensionreason":"None","flowclientsuspensiontime":null,"flowclientsuspensionreasondetails":null,"creator":{"id":"JUHEON","type":"User","tenantId":"JUHEON.com"},"provisioningMethod":"FromDefinition","failureAlertSubscription":true,"clientLastModifiedTime":"2026-05-11T07:05:31.0851836Z","connectionKeySavedTimeKey":"2026-05-11T07:04:40.0224538Z","creationSource":null,"modifiedSources":"Portal"},"$schema":"https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#","contentVersion":"undefined","parameters":{"$authentication":{"defaultValue":{},"type":"SecureObject"},"$connections":{"defaultValue":{},"type":"Object"}},"triggers":{"manual":{"metadata":{},"type":"Request","kind":"Http","inputs":{"triggerAuthenticationType":"All"}}},"actions":{"Initialize_variable_varAction":{"runAfter":{},"type":"InitializeVariable","inputs":{"variables":[{"name":"varAction","type":"string","value":"@triggerBody()?['action']"}]}},"Initialize_variable_varResult":{"runAfter":{"Initialize_variable_varAction":["Succeeded"]},"type":"InitializeVariable","inputs":{"variables":[{"name":"varResult","type":"object","value":{}}]}},"Condition":{"actions":{"Switch":{"cases":{"save-html":{"case":"save-html","actions":{"Create_file":{"type":"OpenApiConnection","inputs":{"parameters":{"dataset":"https://{회사도메인}.sharepoint.com/sites/{사이트명}","folderPath":"/Shared Documents/템플릿 라이브러리/Templates","name":"@concat(triggerBody()?['id'],'.',if(empty(triggerBody()?['fileExt']),'html',triggerBody()?['fileExt']))","body":"@triggerBody()?['html']"},"host":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","connectionName":"shared_sharepointonline","operationId":"CreateFile"},"authentication":"@parameters('$authentication')"},"runtimeConfiguration":{"contentTransfer":{"transferMode":"Chunked"}}},"Set_variable":{"runAfter":{"Update_file_2":["Succeeded"],"Create_file":["Succeeded"]},"type":"SetVariable","inputs":{"name":"varResult","value":{"ok":true,"action":"save-html"}}},"Response":{"runAfter":{"Set_variable":["Succeeded"]},"type":"Response","kind":"Http","inputs":{"statusCode":200,"body":"@variables('varResult')"}},"Update_file_2":{"runAfter":{"Create_file":["Succeeded","Skipped","TimedOut"]},"metadata":{"%252fShared%2bDocuments%252f%25ed%2585%259c%25ed%2594%258c%25eb%25a6%25bf%2b%25eb%259d%25bc%25ec%259d%25b4%25eb%25b8%258c%25eb%259f%25ac%25eb%25a6%25ac%252fauth.json":"/Shared Documents/템플릿 라이브러리/auth.json","%252fShared%2bDocuments%252f%25ed%2585%259c%25ed%2594%258c%25eb%25a6%25bf%2b%25eb%259d%25bc%25ec%259d%25b4%25eb%25b8%258c%25eb%259f%25ac%25eb%25a6%25ac%252fTemplates%252fmoi66js5bl4bnh.html":"/Shared Documents/템플릿 라이브러리/Templates/moi66js5bl4bnh.html"},"type":"OpenApiConnection","inputs":{"parameters":{"dataset":"https://{회사도메인}.sharepoint.com/sites/{사이트명}","id":"@outputs('Create_file')?['body/Id']","body":"@triggerBody()?['html']"},"host":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","connectionName":"shared_sharepointonline","operationId":"UpdateFile"},"authentication":"@parameters('$authentication')"}}}},"save-thumb":{"case":"save-thumb","actions":{"Create_file_1":{"type":"OpenApiConnection","inputs":{"parameters":{"dataset":"https://{회사도메인}.sharepoint.com/sites/{사이트명}","folderPath":"/Shared Documents/템플릿 라이브러리/Thumbnails","name":"@concat(triggerBody()?['id'], '.jpg')","body":"@base64ToBinary(triggerBody()?['base64'])"},"host":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","connectionName":"shared_sharepointonline","operationId":"CreateFile"},"authentication":"@parameters('$authentication')"},"runtimeConfiguration":{"contentTransfer":{"transferMode":"Chunked"}}},"Set_variable_1":{"runAfter":{"Create_file_1":["Succeeded"]},"type":"SetVariable","inputs":{"name":"varResult","value":{"ok":true,"action":"save-thumb"}}},"Response_1":{"runAfter":{"Set_variable_1":["Succeeded"]},"type":"Response","kind":"Http","inputs":{"statusCode":200,"body":"@variables('varResult')"}}}},"save-templates":{"case":"save-templates","actions":{"Update_file":{"metadata":{"%252fShared%2bDocuments%252f%25ed%2585%259c%25ed%2594%258c%25eb%25a6%25bf%2b%25eb%259d%25bc%25ec%259d%25b4%25eb%25b8%258c%25eb%259f%25ac%25eb%25a6%25ac%252fauth.json":"/Shared Documents/템플릿 라이브러리/auth.json"},"type":"OpenApiConnection","inputs":{"parameters":{"dataset":"https://{회사도메인}.sharepoint.com/sites/{사이트명}","id":"/Shared Documents/템플릿 라이브러리/templates.json","body":"@json(\r\n  concat(\r\n    '{ \"items\": ',\r\n    string(triggerBody()?['items']),\r\n    ' }'\r\n  )\r\n)"},"host":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","connectionName":"shared_sharepointonline","operationId":"UpdateFile"},"authentication":"@parameters('$authentication')"}},"Set_variable_2":{"runAfter":{"Update_file":["Succeeded"]},"type":"SetVariable","inputs":{"name":"varResult","value":{"ok":true,"action":"save-templates","count":"@{length(triggerBody()?['items'])}"}}},"Response_2":{"runAfter":{"Set_variable_2":["Succeeded"]},"type":"Response","kind":"Http","inputs":{"statusCode":200,"body":"@variables('varResult')"}}}},"save-fonts":{"case":"save-fonts","actions":{"Update_file_1":{"metadata":{"%252fShared%2bDocuments%252f%25ed%2585%259c%25ed%2594%258c%25eb%25a6%25bf%2b%25eb%259d%25bc%25ec%259d%25b4%25eb%25b8%258c%25eb%259f%25ac%25eb%25a6%25ac%252fauth.json":"/Shared Documents/템플릿 라이브러리/auth.json"},"type":"OpenApiConnection","inputs":{"parameters":{"dataset":"https://{회사도메인}.sharepoint.com/sites/{사이트명}","id":"/Shared Documents/템플릿 라이브러리/fonts.json","body":"@json(\r\n  concat(\r\n    '{ \"fonts\": ',\r\n    string(triggerBody()?['fonts']),\r\n    ' }'\r\n  )\r\n)"},"host":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","connectionName":"shared_sharepointonline","operationId":"UpdateFile"},"authentication":"@parameters('$authentication')"}},"Set_variable_3":{"runAfter":{"Update_file_1":["Succeeded"]},"type":"SetVariable","inputs":{"name":"varResult","value":{"ok":true,"action":"save-fonts","count":"@{length(triggerBody()?['fonts'])}"}}},"Response_3":{"runAfter":{"Set_variable_3":["Succeeded"]},"type":"Response","kind":"Http","inputs":{"statusCode":200,"body":"@variables('varResult')"}}}},"delete-template":{"case":"delete-template","actions":{"Delete_file":{"metadata":{"%252fShared%2bDocuments%252f%25ed%2585%259c%25ed%2594%258c%25eb%25a6%25bf%2b%25eb%259d%25bc%25ec%259d%25b4%25eb%25b8%258c%25eb%259f%25ac%25eb%25a6%25ac%252fauth.json":"/Shared Documents/템플릿 라이브러리/auth.json"},"type":"OpenApiConnection","inputs":{"parameters":{"dataset":"https://{회사도메인}.sharepoint.com/sites/{사이트명}","id":"@concat('/Shared Documents/템플릿 라이브러리/Templates/',triggerBody()?['id'],'.',if(empty(triggerBody()?['fileExt']),'html',triggerBody()?['fileExt']))"},"host":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","connectionName":"shared_sharepointonline","operationId":"DeleteFile"},"authentication":"@parameters('$authentication')"}},"Delete_file_1":{"runAfter":{"Delete_file":["Succeeded","Failed"]},"metadata":{"%252fShared%2bDocuments%252f%25ed%2585%259c%25ed%2594%258c%25eb%25a6%25bf%2b%25eb%259d%25bc%25ec%259d%25b4%25eb%25b8%258c%25eb%259f%25ac%25eb%25a6%25ac%252fauth.json":"/Shared Documents/템플릿 라이브러리/auth.json"},"type":"OpenApiConnection","inputs":{"parameters":{"dataset":"https://{회사도메인}.sharepoint.com/sites/{사이트명}","id":"/Shared Documents/템플릿 라이브러리/Thumbnails/@{triggerBody()?['id']}.{ext}"},"host":{"apiId":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","connectionName":"shared_sharepointonline","operationId":"DeleteFile"},"authentication":"@parameters('$authentication')"}},"Set_variable_4":{"runAfter":{"Delete_file_1":["Succeeded"]},"type":"SetVariable","inputs":{"name":"varResult","value":{"ok":true,"action":"delete-template"}}},"Response_4":{"runAfter":{"Set_variable_4":["Succeeded"]},"type":"Response","kind":"Http","inputs":{"statusCode":200,"body":"@variables('varResult')"}}}}},"default":{"actions":{"Response_5":{"type":"Response","kind":"Http","inputs":{"statusCode":200,"body":{"ok":false,"error":"unknown action","receivedAction":"@{variables('varAction')}"}}}}},"expression":"@variables('varAction')","type":"Switch"}},"runAfter":{"Initialize_variable_varResult":["Succeeded"]},"else":{"actions":{"Response_6":{"type":"Response","kind":"Http","inputs":{"statusCode":200,"body":{"ok":false,"error":"forbidden"}}}}},"expression":{"and":[{"equals":["@or(\r\n  equals(toLower(string(triggerBody()?['isAdmin'])), 'true'),\r\n  equals(triggerBody()?['empNo'], triggerBody()?['authorEmpNo'])\r\n)",true]}]},"type":"If"}}},"connectionReferences":{"shared_sharepointonline":{"connectionName":"shared-sharepointonl-c9dd6a08-056b-4063-a4be-c4c1f822e170","source":"Embedded","id":"/providers/Microsoft.PowerApps/apis/shared_sharepointonline","tier":"NotSpecified","apiName":"sharepointonline","isProcessSimpleApiReferenceConversionAlreadyDone":false}},"flowFailureAlertSubscribed":false,"isManaged":false}}
-```
-{{< /details >}}
-
-마지막으로 auth.json의 구조는 다음과 같이 간단하다.
-```
-{
-  "users": [
-    { "empNo": "Hash값", "name": "홍길동", "rank": "책임", "isAdmin": false },
-    { "empNo": "Hash값", "name": "김철수", "rank": "수석", "isAdmin": false },
-    { "empNo": "Hash값", "name": "관리자", "rank": "관리자", "isAdmin": true }
-  ]
-}
-```
-
-아래 실제 HTML 코드가 있기 때문에 부족한 부분은 AI의 도움을 받자. 😇
 
 > [!SUCCESS] **템플릿 라이브러리 공유**
 > - [🌐 새 창에서 템플릿 라이브러리 열기(Ctrl + 클릭)](/files/templates.html)
