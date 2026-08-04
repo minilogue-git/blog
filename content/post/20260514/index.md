@@ -8,7 +8,7 @@ categories: [Project]
 tags: [Telegram, Netlify, Bot, Obsidian, Read-It-Later, 스크래핑, 옵시디언, 텔레그램, GitHub]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-08-04 08:23
+updated: 2026-08-05 06:03
 ---
 
 # 읽어야 될 글들이 너무 많아졌다.
@@ -479,6 +479,6 @@ async function sendTelegramMessage(chatId: number, text: string, disablePreview 
 
 ---
 2026.05.28 스크래핑 실패 사이트 확인
-- 네이버 블로그 등 보통의 사이트를 스크래핑이 잘 되지만 '[브런치](https://brunch.co.kr/)'는 강력한 보안 및 크롤링 방지 정책이 적용되어 있어 오류가 발생한다.<br>Obsidian Web Clipper로 클리핑 하면 그만이지만, [Oracle Cloud Free Tier](https://www.oracle.com/cloud/)를 받은 만큼 Netlify가 아닌 자체 서버에서 스크래핑 해보는 걸로 했다. 
+- 네이버 블로그 등 보통의 사이트를 스크래핑이 잘 되지만 '[브런치](https://brunch.co.kr/)'는 강력한 보안 및 크롤링 방지 정책이 적용되어 있어 오류가 발생한다.<br>Obsidian Web Clipper로 클리핑 하면 그만이지만, [Oracle Cloud Free Tier](https://www.oracle.com/cloud/)를 받은 만큼 Netlify가 아닌 자체 서버에서 스크래핑 해보는 걸로 했다. <br>
 2026.08.04 네이버 카페 등 md 파일 저장시 인코딩 깨짐 확인
 - md 파일 저장시 인코딩이 깨지는 경우를 방지하기 위해 코드를 일부 수정했다.
