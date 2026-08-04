@@ -8,7 +8,7 @@ categories: [Project]
 tags: [텔레그램, 일정, 여행, 스크린샷, Calendar, Bot, GitHub, Netlify, Screenshot, Plan, Capture, OCR, Gemini, Travel]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-08-05 05:48
+updated: 2026-08-05 06:07
 ---
 
 # 이번엔 여행 예약이 문제였다.
@@ -590,6 +590,5 @@ async function answerCallbackQuery(callbackQueryId: string) {
 
 ---
 
-2026.07.07 실제로 써보며 겪은 이슈들
-
-- `sendConfirmMessage`에 `parse_mode: 'Markdown'`을 넣어놨더니, 화면엔 JSON이 멀쩡히 보이는데 정작 "등록"을 누르면 정보를 못 읽어오는 버그가 있었다. 텔레그램이 서식 렌더링을 위해 백틱을 실제 텍스트에서 지워버려서 생긴 문제였고, 이 함수에서만 `parse_mode`를 빼서 해결했다.
+- 2026.07.07 실제로 써보며 겪은 이슈들
+	- `sendConfirmMessage`에 `parse_mode: 'Markdown'`을 넣어놨더니, 화면엔 JSON이 멀쩡히 보이는데 정작 "등록"을 누르면 정보를 못 읽어오는 버그가 있었다. 텔레그램이 서식 렌더링을 위해 백틱을 실제 텍스트에서 지워버려서 생긴 문제였고, 이 함수에서만 `parse_mode`를 빼서 해결했다.

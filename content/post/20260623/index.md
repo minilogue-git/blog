@@ -8,7 +8,7 @@ categories: [Work]
 tags: [TMC, 기업출장, Business, Travel]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-07-07 05:24
+updated: 2026-08-05 06:07
 ---
 
 # TMC(Travel Management Company)란?

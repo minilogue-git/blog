@@ -8,7 +8,7 @@ categories: [Project]
 tags: [프롬프트, 라이브러리, Prompts, AI, Library]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-06-15 06:13
+updated: 2026-08-05 06:07
 ---
 
 # 템플릿 라이브러리 만으로는 부족하다.
