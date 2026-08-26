@@ -8,7 +8,7 @@ categories: [Project]
 tags: [AI, 템플릿, Template, HTML, SVG, 안내문, 보고서, 라이브러리, Library]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-08-04 08:19
+updated: 2026-08-26 05:45
 ---
 
 # 보고서와 안내문을 HTML 코딩으로 만들기 시작했다.

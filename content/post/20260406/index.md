@@ -8,7 +8,7 @@ categories: [Life]
 tags: [네이버페이, 삼성페이, Macrodroid]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-08-05 06:09
+updated: 2026-08-05 06:11
 ---
 
 # 카드가 많아지면 할 일이 많아진다.
