@@ -8,7 +8,7 @@ categories: [Project]
 tags: [Telegram, Netlify, Bot, Obsidian, Read-It-Later, 스크래핑, 옵시디언, 텔레그램, GitHub]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-08-05 06:06
+updated: 2026-09-22 06:12
 ---
 
 # 읽어야 될 글들이 너무 많아졌다.
@@ -127,10 +127,183 @@ const KOOFR_WEBDAV_URL = 'https://app.koofr.net/dav/Koofr';
 
 // jsdom, iconv-lite, webdav는 Node.js API를 사용하므로 Edge Runtime을 사용하지 않는다.
 export const runtime = 'nodejs';
+// Netlify/Vercel 등에서 지원하는 플랫폼이라면 함수 실행 제한 시간을 늘려본다.
+// (플랫폼/플랜에 따라 무시될 수 있음 — 실제 제한은 호스팅 콘솔에서 확인 필요)
+export const maxDuration = 60;
 
-const USER_AGENT =
+const DESKTOP_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
   'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+
+const MOBILE_USER_AGENT =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) ' +
+  'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1';
+
+const FETCH_TIMEOUT_MS = 20_000;
+
+// 봇 차단/비정상 접근 안내 페이지에서 흔히 쓰이는 문구.
+// HTTP 200이 와도 실제로는 차단 페이지인 경우를 잡아내기 위한 용도.
+const BLOCK_PAGE_HINTS = [
+  '비정상적인 접근',
+  '자동화된 접근',
+  '접근이 제한',
+  '정상적인 경로로 접속',
+  '로봇이 아닙니다',
+  'captcha',
+  'Access Denied',
+  'Attention Required',
+];
+
+/**
+ * m. 서브도메인 등 모바일 전용 페이지는 모바일 UA로 접근해야
+ * 정상적인 모바일 레이아웃(및 본문)을 받을 확률이 높다.
+ * 데스크톱 UA로 접근하면 "PC로 접속해주세요" 같은 안내 페이지만 오는 경우가 있다.
+ */
+function pickUserAgent(hostname: string): string {
+  return /^m\.|\.m\.|^mobile\./i.test(hostname) ? MOBILE_USER_AGENT : DESKTOP_USER_AGENT;
+}
+
+function looksLikeBlockPage(sampleHtml: string): boolean {
+  return BLOCK_PAGE_HINTS.some(hint => sampleHtml.includes(hint));
+}
+
+async function fetchWithTimeout(
+  url: string,
+  headers: Record<string, string>,
+  timeoutMs = FETCH_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { redirect: 'follow', headers, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+type FetchResult = { buffer: Buffer; contentType: string | null; finalUrl: string };
+
+/**
+ * 동일 URL에 대해 UA/Referer 조합을 바꿔가며 최대 2회 시도한다.
+ * - 1차 시도: 호스트에 맞는 UA(m.* 이면 모바일 UA) + 구글 리퍼러
+ * - 2차 시도: 반대쪽 UA + 자기 사이트 리퍼러 + (1차에서 받은 쿠키가 있으면 함께 전송)
+ * 응답이 비정상적으로 짧거나 "차단 안내" 문구가 보이면 실패로 간주하고 다음 시도로 넘어간다.
+ * 두 시도 모두 실패하면 마지막 에러를 던진다 — 상위에서 사용자에게 구체적인 원인을 보여줄 수 있게 한다.
+ */
+async function fetchWithRetry(url: string): Promise<FetchResult> {
+  let hostname = '';
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    // no-op
+  }
+
+  const attempts: Array<{ ua: string; referer: string }> = [
+    { ua: pickUserAgent(hostname), referer: 'https://www.google.com/' },
+    {
+      ua: hostname.startsWith('m.') ? DESKTOP_USER_AGENT : MOBILE_USER_AGENT,
+      referer: hostname ? `https://${hostname}/` : 'https://www.google.com/',
+    },
+  ];
+
+  let lastError: unknown = new Error('알 수 없는 오류로 모든 시도가 실패했습니다.');
+  let carriedCookie: string | undefined;
+
+  for (const attempt of attempts) {
+    try {
+      const headers: Record<string, string> = {
+        'User-Agent': attempt.ua,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.7,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',
+        Referer: attempt.referer,
+        Connection: 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'same-origin',
+        'Sec-Fetch-User': '?1',
+      };
+      if (carriedCookie) headers['Cookie'] = carriedCookie;
+
+      const response = await fetchWithTimeout(url, headers);
+
+      const setCookie = response.headers.get('set-cookie');
+      if (setCookie) carriedCookie = setCookie;
+
+      if (!response.ok) {
+        lastError = new Error(`HTTP ${response.status} ${response.statusText} (요청: ${url})`);
+        continue;
+      }
+
+      const contentType = response.headers.get('content-type');
+      const buffer = Buffer.from(await response.arrayBuffer());
+      const finalUrl = response.url || url;
+
+      if (buffer.length < 500) {
+        lastError = new Error('응답 본문이 비정상적으로 짧습니다 (차단/오류 페이지로 추정).');
+        continue;
+      }
+
+      const sample = buffer.subarray(0, 8000).toString('utf-8');
+      if (looksLikeBlockPage(sample)) {
+        lastError = new Error('사이트가 비정상 접근으로 판단해 차단 페이지를 반환한 것으로 보입니다.');
+        continue;
+      }
+
+      return { buffer, contentType, finalUrl };
+    } catch (error) {
+      lastError =
+        error instanceof Error && error.name === 'AbortError'
+          ? new Error(`요청 시간 초과 (${FETCH_TIMEOUT_MS}ms, 요청: ${url})`)
+          : error;
+    }
+  }
+
+  throw lastError;
+}
+
+/**
+ * 직접 요청이 계속 403/차단으로 막히는 사이트(예: 뽐뿌)를 위한 최후 수단.
+ * ppomppu 같은 곳은 UA/Referer를 바꿔도 뚫리지 않는 경우가 많은데, 이는 헤더 문제가
+ * 아니라 서버리스(클라우드) IP 대역 자체를 차단하는 WAF 정책일 가능성이 높다.
+ * r.jina.ai는 자체 크롤러가 대신 페이지를 가져와 정제된 마크다운으로 반환해주는
+ * 무료 공개 서비스라, 우리 서버 IP가 차단당해도 우회할 수 있다.
+ * (단, jina 쪽도 대상 사이트로부터 언젠가 막힐 수는 있다 — 100% 보장은 아님)
+ */
+async function fetchViaJinaReader(url: string): Promise<{ title: string; markdown: string } | null> {
+  try {
+    const readerUrl = `https://r.jina.ai/${url}`;
+    const response = await fetchWithTimeout(
+      readerUrl,
+      {
+        Accept: 'text/plain',
+        'X-Return-Format': 'markdown',
+      },
+      25_000,
+    );
+
+    if (!response.ok) return null;
+
+    const text = await response.text();
+    if (!text || text.trim().length < 200) return null;
+
+    const titleMatch = text.match(/^Title:\s*(.+)$/m);
+    const markdownStart = text.search(/^Markdown Content:/m);
+    const markdown =
+      markdownStart >= 0
+        ? text.slice(markdownStart).replace(/^Markdown Content:\s*/, '')
+        : text;
+
+    return {
+      title: normalizeText(titleMatch?.[1]),
+      markdown: markdown.trim(),
+    };
+  } catch (error) {
+    console.error('Jina reader fallback failed:', error);
+    return null;
+  }
+}
 
 /**
  * HTML 앞부분은 charset 선언 자체가 ASCII이므로 latin1로 읽어도 안전하다.
@@ -180,7 +353,10 @@ function isValidUtf8(buffer: Buffer): boolean {
 }
 
 function countBrokenCharacters(value: string): number {
-  return (value.match(/\uFFFD/g) || []).length + (value.match(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g) || []).length;
+  return (
+    (value.match(/\uFFFD/g) || []).length +
+    (value.match(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g) || []).length
+  );
 }
 
 /**
@@ -221,14 +397,171 @@ function yamlString(value: string): string {
 }
 
 function makeSafeFileName(title: string): string {
-  const cleaned = normalizeText(title)
-    .replace(/[\\/:*?"<>|%]/g, '-')
+  // 네이버 블로그 제목은 글자 수/문자 제한이 없어서 국기 이모지(🇸🇬 같은 것도 실제로는
+  // 코드포인트 2개가 결합된 특수 문자), 《》 같은 특수 괄호, 기타 심볼이 자유롭게
+  // 들어간다. 이런 문자들은 WebDAV 경로에서 깨지거나 서버가 처리하지 못해 404를
+  // 유발할 수 있으므로, 화이트리스트 방식(글자/숫자/공백/기본 문장부호만 허용)으로
+  // 한 글자씩 걸러낸다 — 알려진 위험 문자만 골라서 막는 것보다 훨씬 안전하다.
+  const ALLOWED_PUNCTUATION = new Set([
+    '-', '_', '.', ',', '(', ')', '[', ']', '!', '?', '~', "'",
+  ]);
+
+  const normalized = normalizeText(title);
+  let cleaned = '';
+  for (const ch of normalized) {
+    // \p{L}: 모든 언어의 글자, \p{N}: 숫자, \p{Zs}: 공백류
+    if (/[\p{L}\p{N}\p{Zs}]/u.test(ch) || ALLOWED_PUNCTUATION.has(ch)) {
+      cleaned += ch;
+    } else {
+      // 이모지(국기 포함), 《》 등 특수 괄호, 기타 심볼은 전부 하이픈으로.
+      cleaned += '-';
+    }
+  }
+
+  cleaned = cleaned
+    // 화이트리스트를 통과했더라도 경로/URL에서 특별한 의미를 가지는 문자는
+    // 한 번 더 확실하게 걸러낸다 (' 나 ( ) 등은 남기되, 실제 구분자 역할을 하는 것만).
+    .replace(/[\\/:*?"<>|%#&+;@=]/g, '-')
+    .replace(/-{2,}/g, '-')
     .replace(/\.+$/g, '')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 150);
 
   return `${cleaned || 'Untitled'}.md`;
+}
+
+/**
+ * Koofr(WebDAV) 업로드. 파일명에 sanitize로 걸러내지 못한 문자가 남아 있거나
+ * 그 외 이유로 PUT이 실패하면, 타임스탬프 기반의 확실히 안전한 이름으로
+ * 한 번 더 시도해서 최소한 내용은 보존한다.
+ */
+async function uploadToKoofr(
+  client: ReturnType<typeof createClient>,
+  fileName: string,
+  content: string,
+): Promise<string> {
+  try {
+    await client.putFileContents(`/ReadItLater/${fileName}`, content, {
+      overwrite: true,
+    });
+    return fileName;
+  } catch (error) {
+    console.error(`Koofr upload failed for "${fileName}", retrying with safe name:`, error);
+    const fallbackName = `Clip-${Date.now()}.md`;
+    await client.putFileContents(`/MiNi_PKM/Clippings/${fallbackName}`, content, {
+      overwrite: true,
+    });
+    return fallbackName;
+  }
+}
+
+/**
+ * 네이버 블로그/카페 PC 버전은 실제 본문이 iframe(예: iframe#mainFrame)으로
+ * 별도 URL에서 로드된다. m. 서브도메인이 아닌 경우에만 시도한다.
+ */
+function findMainIframeSrc(document: Document, baseUrl: string): string | null {
+  let host = '';
+  try {
+    host = new URL(baseUrl).hostname;
+  } catch {
+    return null;
+  }
+  if (!/(^|\.)naver\.com$/.test(host) || host.startsWith('m.')) return null;
+
+  const iframe =
+    document.querySelector('iframe#mainFrame') ||
+    document.querySelector('iframe#cafe_main') ||
+    document.querySelector('iframe[name="mainFrame"]');
+
+  const src = iframe?.getAttribute('src');
+  if (!src) return null;
+
+  try {
+    return new URL(src, baseUrl).href;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Readability가 실패하거나 텍스트가 거의 없는데 원본에는 이미지가 많은 경우
+ * (뽐뿌처럼 이미지 위주 게시물에서 자주 발생) 대비용 대체 추출기.
+ * 광고/댓글/네비게이션성 클래스명을 제외하고, 이미지 수 + 텍스트 길이 기준으로
+ * 가장 "본문 같은" 블록을 고른다. 정교하지는 않지만 Readability가 완전히
+ * 빈 손으로 돌아오는 것보다는 낫다.
+ */
+function pickBestContentBlock(document: Document): Element | null {
+  const EXCLUDE_CLASS_HINTS =
+    /(ad|banner|comment|reply|sidebar|related|footer|header|^nav$|snb|gnb|share|copyright)/i;
+
+  const candidates = Array.from(document.querySelectorAll('div, td, article, section, main'));
+  let best: Element | null = null;
+  let bestScore = 0;
+
+  for (const el of candidates) {
+    const cls = (el.className || '').toString();
+    if (EXCLUDE_CLASS_HINTS.test(cls)) continue;
+
+    const imgCount = el.querySelectorAll('img').length;
+    const textLen = normalizeText(el.textContent).length;
+    const score = imgCount * 200 + textLen;
+
+    if (score > bestScore && (imgCount > 0 || textLen > 100)) {
+      bestScore = score;
+      best = el;
+    }
+  }
+
+  return best;
+}
+
+type ExtractedArticle = { title: string; content: string; excerpt: string; byline: string };
+
+/**
+ * Readability를 우선 시도하되, 텍스트 임계값을 낮춰 이미지 위주 게시물도
+ * 통과할 확률을 높인다. 결과가 비어있거나 지나치게 부실하면(원본엔 이미지가
+ * 있는데 추출 결과엔 없는 경우 등) pickBestContentBlock으로 대체한다.
+ */
+function extractArticle(document: Document): ExtractedArticle | null {
+  let article: ReturnType<Readability['parse']> = null;
+
+  try {
+    // Readability는 전달받은 document를 변형하므로, 대체 추출을 위해
+    // 원본은 그대로 두고 클론에 대해 파싱한다.
+    const clone = document.cloneNode(true) as Document;
+    article = new Readability(clone, { charThreshold: 120 }).parse();
+  } catch (error) {
+    console.error('Readability parse error:', error);
+  }
+
+  const readabilityText = normalizeText(article?.textContent);
+  const readabilityImgCount = article?.content ? (article.content.match(/<img/gi) || []).length : 0;
+  const rawImgCount = document.querySelectorAll('img').length;
+
+  const readabilityLooksWeak =
+    !article?.content || (readabilityText.length < 80 && readabilityImgCount === 0 && rawImgCount > 0);
+
+  if (readabilityLooksWeak) {
+    const fallbackEl = pickBestContentBlock(document);
+    if (fallbackEl) {
+      return {
+        title: normalizeText(article?.title),
+        content: fallbackEl.innerHTML,
+        excerpt: normalizeText(fallbackEl.textContent).slice(0, 200),
+        byline: normalizeText(article?.byline),
+      };
+    }
+  }
+
+  if (!article?.content) return null;
+
+  return {
+    title: normalizeText(article.title),
+    content: article.content,
+    excerpt: normalizeText(article.excerpt),
+    byline: normalizeText(article.byline),
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -259,28 +592,36 @@ export async function POST(req: NextRequest) {
 
     await sendTelegramMessage(chatId, '🔍 원본 콘텐츠 및 고화질 이미지 분석 중...');
 
+    let title = 'Untitled';
+    let markdownContent = '';
+    let description = '';
+    let author = 'Unknown';
+    let effectiveUrl = targetUrl;
+    let primaryError: unknown = null;
+
     try {
-      const response = await fetch(targetUrl, {
-        redirect: 'follow',
-        headers: {
-          'User-Agent': USER_AGENT,
-          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.7,en;q=0.5',
-        },
-      });
+      const initial = await fetchWithRetry(targetUrl);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} ${response.statusText}`);
+      let html = decodeHtml(initial.buffer, initial.contentType);
+      effectiveUrl = initial.finalUrl;
+      let dom = new JSDOM(html, { url: effectiveUrl });
+      let document = dom.window.document;
+
+      // 네이버 블로그/카페 PC 버전처럼 실제 본문이 iframe에 있는 경우, 그 iframe을 따라가서
+      // 실제 콘텐츠 페이지를 다시 받아온다.
+      const hopUrl = findMainIframeSrc(document, effectiveUrl);
+      if (hopUrl) {
+        try {
+          const hop = await fetchWithRetry(hopUrl);
+          html = decodeHtml(hop.buffer, hop.contentType);
+          effectiveUrl = hop.finalUrl;
+          dom = new JSDOM(html, { url: effectiveUrl });
+          document = dom.window.document;
+        } catch (hopError) {
+          // iframe 후속 요청이 실패해도 원본 문서로 계속 시도해본다.
+          console.error('iframe hop fetch failed:', hopError);
+        }
       }
-
-      const contentType = response.headers.get('content-type');
-      const buffer = Buffer.from(await response.arrayBuffer());
-      const html = decodeHtml(buffer, contentType);
-
-      // naver.me 등 단축 URL은 최종 리다이렉트 주소를 base URL로 사용해야 한다.
-      const effectiveUrl = response.url || targetUrl;
-      const dom = new JSDOM(html, { url: effectiveUrl });
-      const document = dom.window.document;
 
       // Readability가 DOM을 변경하기 전에 신뢰도 높은 제목 후보를 보관한다.
       const ogTitle = normalizeText(
@@ -313,15 +654,13 @@ export async function POST(req: NextRequest) {
         }
       });
 
-      const article = new Readability(document).parse();
+      const article = extractArticle(document);
 
       if (!article?.content) {
-        await sendTelegramMessage(chatId, '❌ 본문을 추출할 수 없습니다.');
-        return NextResponse.json({ ok: true });
+        throw new Error('본문을 추출할 수 없습니다 (Readability 및 대체 추출 모두 실패).');
       }
 
-      const readabilityTitle = normalizeText(article.title);
-      const title = ogTitle || readabilityTitle || originalDocumentTitle || 'Untitled';
+      title = ogTitle || article.title || originalDocumentTitle || 'Untitled';
 
       const turndownService = new TurndownService({
         headingStyle: 'atx',
@@ -358,10 +697,33 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const markdownContent = turndownService.turndown(article.content);
+      markdownContent = turndownService.turndown(article.content);
+      description = article.excerpt;
+      author = article.byline || 'Unknown';
+    } catch (error) {
+      // 직접 접근이 막히거나(403 등) 본문 추출에 실패한 경우, 여기서 바로 실패
+      // 처리하지 않고 Jina Reader 우회 경로를 마지막으로 한 번 더 시도해본다.
+      primaryError = error;
+      console.error('Primary scrape failed, trying Jina reader fallback:', error);
+
+      const jina = await fetchViaJinaReader(targetUrl);
+      if (!jina || !jina.markdown) {
+        const detail = primaryError instanceof Error ? primaryError.message : String(primaryError);
+        await sendTelegramMessage(
+          chatId,
+          `❌ 처리 중 에러가 발생했습니다.\n\n원인: ${detail.slice(0, 300)}\n(대체 경로(Jina Reader) 시도도 실패)`,
+        );
+        return NextResponse.json({ ok: true });
+      }
+
+      title = jina.title || title;
+      markdownContent = jina.markdown;
+      description = '';
+      author = 'Unknown';
+    }
+
+    try {
       const now = new Date();
-      const description = normalizeText(article.excerpt);
-      const author = normalizeText(article.byline) || 'Unknown';
 
       const frontmatter = `---
 title: ${yamlString(title)}
@@ -382,14 +744,16 @@ tags: ["ReadItLater"]
         username: KOOFR_EMAIL,
         password: KOOFR_APP_PASSWORD,
       });
-      await client.putFileContents(`/ReadItLater/${fileName}`, finalContent, {
-        overwrite: true,
-      });
+      const savedFileName = await uploadToKoofr(client, fileName, finalContent);
 
-      await sendTelegramMessage(chatId, `✅ 아카이빙 완료!\n\n📄 ${fileName}`, true);
+      await sendTelegramMessage(chatId, `✅ 아카이빙 완료!\n\n📄 ${savedFileName}`, true);
     } catch (error) {
-      console.error('Error:', error);
-      await sendTelegramMessage(chatId, '❌ 처리 중 에러가 발생했습니다.');
+      console.error('Upload error:', error);
+      const detail = error instanceof Error ? error.message : String(error);
+      await sendTelegramMessage(
+        chatId,
+        `❌ 저장 중 에러가 발생했습니다.\n\n원인: ${detail.slice(0, 300)}`,
+      );
     }
 
     return NextResponse.json({ ok: true });
@@ -475,10 +839,11 @@ async function sendTelegramMessage(chatId: number, text: string, disablePreview 
 
 ![텔레그램 봇에 URL을 붙여넣기만 하면 된다.](20260518061455.png)
 
-![옵시디언에 자동으로 들어오는 md 파일|637](20260518061921.png)
+![옵시디언에 자동으로 들어오는 md 파일](20260518061921.png)
 
 ---
 - 2026.05.28 스크래핑 실패 사이트 확인
 	- 네이버 블로그 등 보통의 사이트를 스크래핑이 잘 되지만 '[브런치](https://brunch.co.kr/)'는 강력한 보안 및 크롤링 방지 정책이 적용되어 있어 오류가 발생한다.<br>Obsidian Web Clipper로 클리핑 하면 그만이지만, [Oracle Cloud Free Tier](https://www.oracle.com/cloud/)를 받은 만큼 Netlify가 아닌 자체 서버에서 스크래핑 해보는 걸로 했다. 
-- 2026.08.04 네이버 카페 등 md 파일 저장시 인코딩 깨짐 확인
-	- md 파일 저장시 인코딩이 깨지는 경우를 방지하기 위해 코드를 일부 수정했다.
+- 2026.08.04 네이버 블로그, 카페 등 제목에 특수문자가 있는 경우 스크래핑 오류 확인
+	- '《'와 같은 특수문자가 들어가 있는 경우 스크래핑에 실패하는 오류를 확인하여 이를 방지하기 위해 코드를 일부 수정했다.
+	- 향후 디버깅을 위해 에러 원인도 좀 더 세분화해서 알려주도록 업데이트 했다.
