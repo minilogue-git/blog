@@ -4,23 +4,11 @@ description: 여름휴가로 오키나와에 다녀오면서 챙긴 결제 이�
 slug: okinawa-vacation-payment-promotions
 date: 2026-08-26T05:46:53+09:00
 image: 20260826062744.png
-categories:
-  - Travel
-tags:
-  - 결제
-  - 이벤트
-  - 트래블러스
-  - 트래블로그
-  - 캐시백
-  - 리워드
-  - UnionPay
-  - Visa
-  - Master
-  - 오키나와
-  - 일본
+categories: [Travel]
+tags: [결제, 이벤트, 트래블러스, 트래블로그, 캐시백, 리워드, UnionPay, Visa, Master, 오키나와, 일본]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-08-27 06:24
+updated: 2026-10-26 06:29
 ---
 
 # 엔화가 날이면 날마다 떨어진다.
