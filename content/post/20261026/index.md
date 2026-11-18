@@ -4,18 +4,11 @@ description: 싱가포르는 은근히 6세 아이와 함께 할 게 많다.
 slug: singapore-itinerary-with-young-child
 date: 2026-10-26T06:13:42+09:00
 image: 20261026062809.png
-categories:
-  - Travel
-tags:
-  - 싱가포르
-  - Singapore
-  - 하얏트
-  - Hyatt
+categories: [Travel]
+tags: [싱가포르, Singapore, 하얏트, Hyatt]
 weight: 0
 created: 2026-02-24 21:23
-updated: 2026-11-18 06:23
----
-
+updated: 2026-11-19 05:39
 ---
 
 # 싱가포르는 사진만 찍는 도시인 줄 알았다.
